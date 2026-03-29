@@ -9,50 +9,36 @@ import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/fir
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 document.addEventListener('DOMContentLoaded', () => {
+    
+    // 0. LOCAL DEVELOPMENT MODE TOGGLE
+    const LOCAL_DEV_MODE = false; // Set to 'false' before pushing to production
 
-    // 0. App Navigation Logic (Mobile-App Frame)
-    const navButtons = document.querySelectorAll('.floating-nav .nav-btn');
+    // 1. Security Gate: Only Admin 'yochanbr@gmail.com' can stay
+    onAuthStateChanged(auth, (user) => {
+        if (LOCAL_DEV_MODE) {
+            console.warn("ADMIN DEV MODE: Bypassing security gate.");
+            return;
+        }
+
+        if (!user || !isUserAdmin(user)) {
+            console.warn("Unauthorized Access Attempt");
+            window.location.href = "index.html"; // Redirect intruders
+        }
+    });
+
+    // 2. Sidebar Navigation
+    const navButtons = document.querySelectorAll('.sidebar-nav .nav-btn');
     const views = document.querySelectorAll('.admin-view');
 
     navButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const viewId = btn.getAttribute('data-view');
-            if (!viewId) return; // Exit button has no viewId
-
-            // UI Toggle
             navButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            // View Switch
             views.forEach(v => v.classList.remove('active'));
-            const target = document.getElementById(`view-${viewId}`);
-            if (target) {
-                target.classList.add('active');
-                // Scroll to top
-                document.querySelector('.view-container').scrollTop = 0;
-            }
+            document.getElementById(`view-${viewId}`)?.classList.add('active');
         });
     });
-
-    // 1. Security Gate: Only Admin 'yochanbr@gmail.com' can stay
-    onAuthStateChanged(auth, (user) => {
-        if (!user) {
-            console.warn("Unauthorized: No session");
-            window.location.href = "index.html";
-            return;
-        }
-
-        if (!isUserAdmin(user)) {
-            console.warn("Unauthorized: Not Admin", user.email);
-            window.location.href = "index.html"; 
-        } else {
-            console.log("Admin Authenticated:", user.email);
-        }
-    });
-
-    // Redundant for the new forced-mobile architecture
-    // Removing old sidebar nav loop...
-
 
     // 3. Challenge Forge (PUSH TO FIRESTORE)
     const pushChallengeBtn = document.getElementById('push-challenge-btn');

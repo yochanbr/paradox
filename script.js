@@ -13,6 +13,11 @@ import {
 document.addEventListener('DOMContentLoaded', () => {
 
     // ==========================================
+    // 0. LOCAL DEVELOPMENT MODE TOGGLE
+    // ==========================================
+    const LOCAL_DEV_MODE = false; // Set to 'false' before pushing to production
+
+    // ==========================================
     // 1. IDENTITY & LOGIN RITUAL
     // ==========================================
     const loginOverlay = document.getElementById('login-overlay');
@@ -35,9 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Monitor Auth State
     onAuthStateChanged(auth, async (user) => {
+        if (LOCAL_DEV_MODE) {
+            console.warn("DEV MODE ACTIVE: Bypassing auth check.");
+            loginOverlay?.classList.add('hidden');
+        }
+
         if (user) {
             console.log("Welcome,", user.displayName);
-            loginOverlay?.classList.add('hidden');
+            if (!LOCAL_DEV_MODE) loginOverlay?.classList.add('hidden');
             
             // Sync UI with Profile
             if (profileName) profileName.textContent = user.displayName;
@@ -55,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initRealtimeChallenges();
             initRealtimeNotifications();
         } else {
-            loginOverlay?.classList.remove('hidden');
+            if (!LOCAL_DEV_MODE) loginOverlay?.classList.remove('hidden');
         }
     });
 
