@@ -1838,7 +1838,87 @@ input:checked + .slider:before {
 
 .empty-state p {
     font-weight: 600;
+    /* Date Scroller UI */
+.month-display {
+    padding: 24px 20px 12px;
+}
+
+.month-display h2 {
+    font-size: 20px;
+    font-weight: 800;
     color: var(--text-primary);
+}
+
+.date-scroller-container {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+    scroll-snap-type: x mandatory;
+    padding-bottom: 20px;
+}
+
+.date-scroller-container::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.date-scroller {
+    display: flex;
+    gap: 12px;
+    padding: 0 20px;
+    width: max-content;
+}
+
+.date-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    height: 80px;
+    border-radius: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    scroll-snap-align: center;
+    cursor: pointer;
+}
+
+.date-item span:first-child {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.date-item span:last-child {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+/* Today Highlight */
+.date-item.active {
+    background: var(--brand-blue);
+    border-color: var(--brand-blue);
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(58, 134, 255, 0.2);
+}
+
+.date-item.active span {
+    color: white !important;
+}
+
+.date-item:hover:not(.active) {
+    background: var(--bg-tertiary);
+    border-color: var(--text-secondary);
+}
+
+/* View Overrides for Goals */
+#view-goals {
+    padding-top: 0;
+}
     margin-bottom: 4px;
 }
 

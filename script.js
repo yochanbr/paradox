@@ -860,4 +860,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     initDates();
+    initDateScroller(); // Launch the dynamic date scroller
 });
+
+// ==========================================
+// 8. DYNAMIC DATE SCROLLER ENGINE
+// ==========================================
+
+function initDateScroller() {
+    const scroller = document.getElementById('dynamic-date-scroller');
+    const label = document.getElementById('month-label');
+    if (!scroller || !label) return;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const today = now.getDate();
+
+    // 1. Update Month/Year Label (e.g., "March 2026")
+    const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
+    label.textContent = monthFormatter.format(now);
+
+    // 2. Clear Existing Content
+    scroller.innerHTML = '';
+
+    // 3. Generate Days of the Month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'short' });
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateObj = new Date(year, month, day);
+        const dayStr = dayFormatter.format(dateObj).toUpperCase();
+        
+        const dateItem = document.createElement('div');
+        dateItem.className = 'date-item';
+        if (day === today) dateItem.classList.add('active');
+
+        dateItem.innerHTML = `
+            <span>${dayStr}</span>
+            <span>${day}</span>
+        `;
+
+        scroller.appendChild(dateItem);
+
+        // Auto-center "Today"
+        if (day === today) {
+            setTimeout(() => {
+                dateItem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }, 500);
+        }
+    }
+}

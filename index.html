@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Clarity Dashboard</title>
+    <title>Paradox.</title>
 
     <!-- Firebase SDK (Modular) -->
     <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>    <link rel="stylesheet"
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
@@ -30,7 +31,8 @@
                     <span class="notification-badge"></span>
                 </button>
                 <div class="user-chip" id="open-profile-btn" style="cursor: pointer;">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" alt="User Avatar">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+                        alt="User Avatar">
                 </div>
             </div>
         </header>
@@ -53,7 +55,8 @@
                                 <h3>Focus</h3>
                             </div>
                             <p class="goal-text placeholder">Tap to set today's intention.</p>
-                            <button class="add-goal-btn" id="open-goal-inner-btn"><span class="material-symbols-rounded">add</span></button>
+                            <button class="add-goal-btn" id="open-goal-inner-btn"><span
+                                    class="material-symbols-rounded">add</span></button>
                         </div>
                         <div class="bento-item streak-widget">
                             <div class="streak-info">
@@ -73,14 +76,17 @@
                 <div class="section-title">
                     <h2>Daily Dox</h2>
                     <div style="display:flex; gap:8px;">
-                        <button class="filter-btn" id="refresh-feed-btn" title="Refresh Feed"><span class="material-symbols-rounded">refresh</span></button>
-                        <button class="filter-btn" id="open-feed-filter-btn" title="Filter Feed"><span class="material-symbols-rounded">tune</span></button>
+                        <button class="filter-btn" id="refresh-feed-btn" title="Refresh Feed"><span
+                                class="material-symbols-rounded">refresh</span></button>
+                        <button class="filter-btn" id="open-feed-filter-btn" title="Filter Feed"><span
+                                class="material-symbols-rounded">tune</span></button>
                     </div>
                 </div>
 
                 <!-- NEW: Home Composer Bar -->
                 <div class="home-composer-bar" id="open-status-btn">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" class="tiny-avatar">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+                        class="tiny-avatar">
                     <div class="composer-placeholder">What's on your mind?</div>
                 </div>
 
@@ -95,7 +101,7 @@
 
             <!-- VIEW: GOALS -->
             <div class="app-view" id="view-goals">
-                
+
                 <!-- NEW: Horizontal Date Scroller -->
                 <div class="month-display">
                     <h2 id="month-label">March 2026</h2>
@@ -136,14 +142,14 @@
                 </div>
 
                 <div class="community-content">
-                    
+
                     <!-- Community Sub-view: Challenges -->
                     <div class="sub-app-view active" id="subview-challenges">
                         <div class="admin-notice">
                             <span class="material-symbols-rounded">verified</span>
                             <span>Official Admin Challenges</span>
                         </div>
-                        
+
                         <div class="challenges-container" id="challenges-container">
                             <div class="empty-state-mini">
                                 <span class="material-symbols-rounded">emoji_events</span>
@@ -338,10 +344,11 @@
 
             <div class="drawer-content">
                 <div class="edit-profile-section" style="text-align: center; padding: 20px 0;">
-                    <img src="" id="diary-pfp"
-                        alt="Profile Avatar" class="hero-avatar" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; background: var(--bg-secondary);">
+                    <img src="" id="diary-pfp" alt="Profile Avatar" class="hero-avatar"
+                        style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; background: var(--bg-secondary);">
                     <h3 id="diary-name" style="margin-bottom: 8px;">Stoic Identity</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary);">Profile customization is currently disabled in Beta.</p>
+                    <p style="font-size: 13px; color: var(--text-secondary);">Profile customization is currently
+                        disabled in Beta.</p>
                 </div>
 
                 <div class="verification-section">
@@ -418,7 +425,8 @@
 
                     <a href="admin.html" class="list-item" style="text-decoration: none;">
                         <div class="item-left">
-                            <span class="material-symbols-rounded" style="color: var(--brand-blue);">admin_panel_settings</span>
+                            <span class="material-symbols-rounded"
+                                style="color: var(--brand-blue);">admin_panel_settings</span>
                             <span>Admin Portal</span>
                         </div>
                         <span class="material-symbols-rounded icon-subtle">chevron_right</span>
@@ -444,16 +452,18 @@
                     <span class="material-symbols-rounded">close</span>
                 </button>
                 <h2>New Paradox</h2>
-                <button class="icon-btn" id="save-post-btn" style="color: var(--brand-blue); font-weight: 700;">POST</button>
+                <button class="icon-btn" id="save-post-btn"
+                    style="color: var(--brand-blue); font-weight: 700;">POST</button>
             </div>
             <div class="drawer-content">
                 <div class="compose-area">
                     <div class="user-info-mini">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" class="tiny-avatar">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+                            class="tiny-avatar">
                         <span>Elias Thorne</span>
                     </div>
                     <textarea placeholder="What's on your mind? Share a paradox..." class="compose-input"></textarea>
-                    
+
                     <div class="media-preview-placeholder">
                         <span class="material-symbols-rounded">add_a_photo</span>
                         <span>Add Photos or Video</span>
@@ -462,7 +472,8 @@
                     <div class="compose-toolbar">
                         <button class="toolbar-btn"><span class="material-symbols-rounded">image</span></button>
                         <button class="toolbar-btn"><span class="material-symbols-rounded">videocam</span></button>
-                        <button class="toolbar-btn"><span class="material-symbols-rounded">alternate_email</span></button>
+                        <button class="toolbar-btn"><span
+                                class="material-symbols-rounded">alternate_email</span></button>
                         <button class="toolbar-btn"><span class="material-symbols-rounded">location_on</span></button>
                     </div>
                 </div>
@@ -501,10 +512,11 @@
             </div>
             <div class="drawer-content">
                 <div class="goal-form-container">
-                    
+
                     <div class="form-section">
                         <label class="form-label">What do you want to achieve?</label>
-                        <textarea class="goal-input-large" placeholder="e.g., Morning Meditation for 10 minutes"></textarea>
+                        <textarea class="goal-input-large"
+                            placeholder="e.g., Morning Meditation for 10 minutes"></textarea>
                     </div>
 
                     <div class="form-section">
@@ -555,140 +567,143 @@
                 <div style="width:24px"></div>
             </div>
             <div class="drawer-content">
-                    <div class="form-section">
-                        <label class="form-label">Current Mood</label>
-                        <div class="mood-selector">
-                            <button class="mood-opt" title="Calm">
-                                <span class="material-symbols-rounded">self_improvement</span>
-                            </button>
-                            <button class="mood-opt" title="Productive">
-                                <span class="material-symbols-rounded">bolt</span>
-                            </button>
-                            <button class="mood-opt" title="Anxious">
-                                <span class="material-symbols-rounded">waves</span>
-                            </button>
-                            <button class="mood-opt" title="Grateful">
-                                <span class="material-symbols-rounded">favorite</span>
-                            </button>
-                            <button class="mood-opt" title="Reflective">
-                                <span class="material-symbols-rounded">visibility</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-section">
-                        <div class="zen-prompt-box">
-                            <span class="material-symbols-rounded">tips_and_updates</span>
-                            <p id="journal-prompt-text">What is within your control right now?</p>
-                        </div>
-                    </div>
-
-                    <div class="form-section">
-                        <textarea class="zen-writing-area" placeholder="Deep dive into your thoughts..."></textarea>
-                    </div>
-
-                    <div class="form-footer">
-                        <button class="action-btn-large primary-btn" id="save-journal-btn">
-                            <span class="material-symbols-rounded">lock</span>
-                            Save to Vault
+                <div class="form-section">
+                    <label class="form-label">Current Mood</label>
+                    <div class="mood-selector">
+                        <button class="mood-opt" title="Calm">
+                            <span class="material-symbols-rounded">self_improvement</span>
+                        </button>
+                        <button class="mood-opt" title="Productive">
+                            <span class="material-symbols-rounded">bolt</span>
+                        </button>
+                        <button class="mood-opt" title="Anxious">
+                            <span class="material-symbols-rounded">waves</span>
+                        </button>
+                        <button class="mood-opt" title="Grateful">
+                            <span class="material-symbols-rounded">favorite</span>
+                        </button>
+                        <button class="mood-opt" title="Reflective">
+                            <span class="material-symbols-rounded">visibility</span>
                         </button>
                     </div>
+                </div>
 
+                <div class="form-section">
+                    <div class="zen-prompt-box">
+                        <span class="material-symbols-rounded">tips_and_updates</span>
+                        <p id="journal-prompt-text">What is within your control right now?</p>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <textarea class="zen-writing-area" placeholder="Deep dive into your thoughts..."></textarea>
+                </div>
+
+                <div class="form-footer">
+                    <button class="action-btn-large primary-btn" id="save-journal-btn">
+                        <span class="material-symbols-rounded">lock</span>
+                        Save to Vault
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Post Drawer -->
+    <div class="drawer drawer-secondary" id="edit-post-drawer">
+        <div class="drawer-header">
+            <button class="icon-btn" id="close-edit-post-btn">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+            <h2>Edit Paradox</h2>
+            <button class="icon-btn" id="update-post-btn"
+                style="color: var(--brand-blue); font-weight: 700;">UPDATE</button>
+        </div>
+        <div class="drawer-content">
+            <div class="compose-area">
+                <textarea id="edit-post-input" placeholder="Modify your paradox..." class="compose-input"></textarea>
+
+                <div class="compose-toolbar">
+                    <button class="toolbar-btn"><span class="material-symbols-rounded">image</span></button>
+                    <button class="toolbar-btn"><span class="material-symbols-rounded">alternate_email</span></button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Edit Post Drawer -->
-        <div class="drawer drawer-secondary" id="edit-post-drawer">
-            <div class="drawer-header">
-                <button class="icon-btn" id="close-edit-post-btn">
-                    <span class="material-symbols-rounded">close</span>
-                </button>
-                <h2>Edit Paradox</h2>
-                <button class="icon-btn" id="update-post-btn" style="color: var(--brand-blue); font-weight: 700;">UPDATE</button>
-            </div>
-            <div class="drawer-content">
-                <div class="compose-area">
-                    <textarea id="edit-post-input" placeholder="Modify your paradox..." class="compose-input"></textarea>
-                    
-                    <div class="compose-toolbar">
-                        <button class="toolbar-btn"><span class="material-symbols-rounded">image</span></button>
-                        <button class="toolbar-btn"><span class="material-symbols-rounded">alternate_email</span></button>
-                    </div>
+    <!-- Notification Drawer -->
+    <div class="drawer" id="notification-drawer">
+        <div class="drawer-header">
+            <button class="icon-btn" id="close-notifications-btn">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+            <h2>Notifications</h2>
+            <button class="text-link-btn" id="clear-all-notifs-btn"
+                style="color: var(--brand-pink); font-size: 13px; font-weight: 700;">CLEAR ALL</button>
+        </div>
+        <div class="drawer-content">
+            <div class="notification-list" id="notification-list">
+                <div class="empty-state-mini">
+                    <span class="material-symbols-rounded">notifications_off</span>
+                    <p>No new updates.</p>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Notification Drawer -->
-        <div class="drawer" id="notification-drawer">
-            <div class="drawer-header">
-                <button class="icon-btn" id="close-notifications-btn">
-                    <span class="material-symbols-rounded">close</span>
-                </button>
-                <h2>Notifications</h2>
-                <button class="text-link-btn" id="clear-all-notifs-btn" style="color: var(--brand-pink); font-size: 13px; font-weight: 700;">CLEAR ALL</button>
-            </div>
-            <div class="drawer-content">
-                <div class="notification-list" id="notification-list">
-                    <div class="empty-state-mini">
-                        <span class="material-symbols-rounded">notifications_off</span>
-                        <p>No new updates.</p>
-                    </div>
+    <!-- Feed Filter Drawer -->
+    <div class="drawer drawer-secondary" id="feed-filter-drawer">
+        <div class="drawer-header">
+            <button class="icon-btn" id="close-feed-filter-btn">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+            <h2>Feed Filter</h2>
+            <div style="width:24px"></div>
+        </div>
+        <div class="drawer-content">
+            <div class="create-options-grid">
+                <div class="create-card active-filter filter-opt" data-filter="global">
+                    <span class="material-symbols-rounded">public</span>
+                    <h3>Global Dox</h3>
+                    <p>See all paradoxes from everyone</p>
+                </div>
+                <div class="create-card filter-opt" data-filter="mine">
+                    <span class="material-symbols-rounded">person</span>
+                    <h3>My Dox</h3>
+                    <p>View only your own posts</p>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Feed Filter Drawer -->
-        <div class="drawer drawer-secondary" id="feed-filter-drawer">
-            <div class="drawer-header">
-                <button class="icon-btn" id="close-feed-filter-btn">
-                    <span class="material-symbols-rounded">close</span>
-                </button>
-                <h2>Feed Filter</h2>
-                <div style="width:24px"></div>
-            </div>
-            <div class="drawer-content">
-                <div class="create-options-grid">
-                    <div class="create-card active-filter filter-opt" data-filter="global">
-                        <span class="material-symbols-rounded">public</span>
-                        <h3>Global Dox</h3>
-                        <p>See all paradoxes from everyone</p>
-                    </div>
-                    <div class="create-card filter-opt" data-filter="mine">
-                        <span class="material-symbols-rounded">person</span>
-                        <h3>My Dox</h3>
-                        <p>View only your own posts</p>
-                    </div>
+    <!-- Comments Drawer -->
+    <div class="drawer drawer-secondary" id="comments-drawer">
+        <div class="drawer-header">
+            <button class="icon-btn" id="close-comments-btn">
+                <span class="material-symbols-rounded">arrow_back</span>
+            </button>
+            <h2>Comments</h2>
+            <div style="width:24px"></div>
+        </div>
+        <div class="drawer-content drawer-content-flex">
+            <div class="comments-list" id="comments-list">
+                <div class="empty-state-mini">
+                    <span class="material-symbols-rounded">forum</span>
+                    <p>No comments yet. Be the first.</p>
                 </div>
             </div>
         </div>
-
-        <!-- Comments Drawer -->
-        <div class="drawer drawer-secondary" id="comments-drawer">
-            <div class="drawer-header">
-                <button class="icon-btn" id="close-comments-btn">
-                    <span class="material-symbols-rounded">arrow_back</span>
-                </button>
-                <h2>Comments</h2>
-                <div style="width:24px"></div>
-            </div>
-            <div class="drawer-content drawer-content-flex">
-                <div class="comments-list" id="comments-list">
-                    <div class="empty-state-mini">
-                        <span class="material-symbols-rounded">forum</span>
-                        <p>No comments yet. Be the first.</p>
-                    </div>
-                </div>
-            </div>
-            <!-- Pinned input at bottom -->
-            <div class="comments-composer">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" class="tiny-avatar" id="commenter-avatar">
-                <input type="text" id="comment-input" placeholder="Add a comment...">
-                <button class="icon-btn send-btn" id="send-comment-btn" disabled>
-                    <span class="material-symbols-rounded">send</span>
-                </button>
-            </div>
+        <!-- Pinned input at bottom -->
+        <div class="comments-composer">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+                class="tiny-avatar" id="commenter-avatar">
+            <input type="text" id="comment-input" placeholder="Add a comment...">
+            <button class="icon-btn send-btn" id="send-comment-btn" disabled>
+                <span class="material-symbols-rounded">send</span>
+            </button>
         </div>
+    </div>
 
     <!-- Login Ritual Overlay (Sync with Auth) -->
     <div id="login-overlay" class="login-overlay hidden">
@@ -696,7 +711,7 @@
             <h1 class="logo">Paradox<span>.</span></h1>
             <p class="stoic-quote">"It is not that we have a short time to live, but that we waste much of it."</p>
             <span class="quote-author">— Seneca</span>
-            
+
             <button class="google-login-btn" id="login-google-btn">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" alt="Google">
                 Continue with Google
