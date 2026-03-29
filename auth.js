@@ -42,19 +42,20 @@ async function signOutUser() {
 /**
  * Update the user's profile across Auth and Firestore
  */
-async function updateUserProfile(newName) {
+async function updateUserProfile(newName, newPhotoURL) {
     if (!auth.currentUser) return;
     try {
-        // 1. Update Firebase Auth Profile
-        await updateProfile(auth.currentUser, {
+        const updates = { 
             displayName: newName
-        });
+        };
+        if (newPhotoURL) updates.photoURL = newPhotoURL;
+
+        // 1. Update Firebase Auth Profile
+        await updateProfile(auth.currentUser, updates);
 
         // 2. Update Firestore User Document
         const userRef = doc(db, "users", auth.currentUser.uid);
-        await updateDoc(userRef, {
-            displayName: newName
-        });
+        await updateDoc(userRef, updates);
 
         console.log("Profile updated successfully");
         return true;

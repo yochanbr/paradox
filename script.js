@@ -65,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadFeed();
             initRealtimeChallenges();
             initRealtimeNotifications();
+            runNotificationCleanup(user.uid); // Automated 7-day purge
         } else {
             if (!LOCAL_DEV_MODE) loginOverlay?.classList.remove('hidden');
         }
@@ -115,7 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
     wireDrawer('open-my-public-dox-btn', 'my-public-dox-drawer', 'close-my-public-dox-btn');
     wireDrawer('open-feed-filter-btn', 'feed-filter-drawer', 'close-feed-filter-btn');
     wireDrawer('open-diary-btn', 'diary-drawer', 'close-diary-btn');
-    wireDrawer('close-edit-post-btn', 'edit-post-drawer', 'close-edit-post-btn'); // reusing wireDrawer for closing too
+    wireDrawer('close-edit-post-btn', 'edit-post-drawer', 'close-edit-post-btn');
+    wireDrawer('open-notifications-btn', 'notification-drawer', 'close-notifications-btn');
 
     // Composer Triggers
     const composers = [
@@ -202,6 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle Profile Update
     document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
         const newName = document.getElementById('diary-name-input').value.trim();
+        const newPfp = document.getElementById('diary-pfp-input').value.trim();
+        
         if (!newName) return showToast("Name cannot be empty.");
 
         const btn = document.getElementById('save-profile-btn');
@@ -209,11 +213,13 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            await updateUserProfile(newName);
+            await updateUserProfile(newName, newPfp);
             showToast("Profile Updated");
             document.getElementById('diary-drawer').classList.remove('open');
             // Refresh Header & Profile UI
             if (profileName) profileName.textContent = newName;
+            if (profileAvatar) profileAvatar.src = newPfp || profileAvatar.src;
+            if (headerAvatar) headerAvatar.src = newPfp || headerAvatar.src;
         } catch (err) {
             console.error(err);
             showToast("Failed to update profile.");
@@ -225,8 +231,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Populate Diary Input on open
     document.getElementById('open-diary-btn')?.addEventListener('click', () => {
-        const input = document.getElementById('diary-name-input');
-        if (input && auth.currentUser) input.value = auth.currentUser.displayName;
+        const nameInput = document.getElementById('diary-name-input');
+        const pfpInput = document.getElementById('diary-pfp-input');
+        if (auth.currentUser) {
+            if (nameInput) nameInput.value = auth.currentUser.displayName;
+            if (pfpInput) pfpInput.value = auth.currentUser.photoURL || "";
+        }
     });
 
     async function loadMyPublicDox() {
@@ -587,11 +597,66 @@ document.addEventListener('DOMContentLoaded', () => {
             // No orderBy mapping to avoid complex index requirements at this stage. We sort client-side.
             const qUser = query(collection(db, "user_notifications"), where("recipientId", "==", auth.currentUser.uid));
             onSnapshot(qUser, (snapshot) => {
-                userNotifs = snapshot.docs.map(doc => ({ ...doc.data(), type: 'user' }));
+                userNotifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'user' }));
                 renderNotifs();
             });
         }
     }
+
+    // Mandatory 7rd Day Notification Cleanup
+    async function runNotificationCleanup(uid) {
+        try {
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            
+            const q = query(collection(db, "user_notifications"), where("recipientId", "==", uid));
+            const snap = await getDocs(q);
+            
+            let deletedCount = 0;
+            const promises = [];
+            
+            snap.forEach(docSnap => {
+                const data = docSnap.data();
+                if (data.timestamp && data.timestamp.toDate() < sevenDaysAgo) {
+                    promises.push(deleteDoc(docSnap.ref));
+                    deletedCount++;
+                }
+            });
+
+            if (promises.length > 0) {
+                await Promise.all(promises);
+                console.log(`Auto-cleaned ${deletedCount} old notifications.`);
+            }
+        } catch (err) {
+            console.error("Cleanup Error:", err);
+        }
+    }
+
+    // Manual Clear All Notifications
+    document.getElementById('clear-all-notifs-btn')?.addEventListener('click', async () => {
+        if (!auth.currentUser) return;
+        if (!confirm("Clear all notifications?")) return;
+
+        const btn = document.getElementById('clear-all-notifs-btn');
+        const originalText = btn.textContent;
+        btn.textContent = "CLEARING...";
+        btn.disabled = true;
+
+        try {
+            const q = query(collection(db, "user_notifications"), where("recipientId", "==", auth.currentUser.uid));
+            const snap = await getDocs(q);
+            
+            const promises = snap.docs.map(d => deleteDoc(d.ref));
+            await Promise.all(promises);
+            showToast("Notifications Cleared");
+        } catch (err) {
+            console.error(err);
+            showToast("Clear failed.");
+        } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    });
 
     function createPostElement(id, post) {
         const div = document.createElement('div');
