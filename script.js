@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 0. LOCAL DEVELOPMENT MODE TOGGLE
     // ==========================================
-    const LOCAL_DEV_MODE = false; // Set to 'false' before pushing to production
+    const LOCAL_DEV_MODE = false; // Set to 'true' for local testing, 'false' for production
 
     // ==========================================
     // 1. IDENTITY & LOGIN RITUAL
