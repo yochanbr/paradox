@@ -1838,7 +1838,11 @@ input:checked + .slider:before {
 
 .empty-state p {
     font-weight: 600;
-    /* Date Scroller UI */
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+/* Date Scroller UI */
 .month-display {
     padding: 24px 20px 12px;
 }
@@ -1918,8 +1922,6 @@ input:checked + .slider:before {
 /* View Overrides for Goals */
 #view-goals {
     padding-top: 0;
-}
-    margin-bottom: 4px;
 }
 
 .empty-state span:last-child {
