@@ -10,18 +10,29 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/fi
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 0. Mobile Navigation Logic
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const menuToggle = document.getElementById('menu-toggle');
+    // 0. App Navigation Logic (Mobile-App Frame)
+    const navButtons = document.querySelectorAll('.floating-nav .nav-btn');
+    const views = document.querySelectorAll('.admin-view');
 
-    function toggleSidebar() {
-        sidebar?.classList.toggle('show');
-        overlay?.classList.toggle('show');
-    }
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const viewId = btn.getAttribute('data-view');
+            if (!viewId) return; // Exit button has no viewId
 
-    menuToggle?.addEventListener('click', toggleSidebar);
-    overlay?.addEventListener('click', toggleSidebar);
+            // UI Toggle
+            navButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // View Switch
+            views.forEach(v => v.classList.remove('active'));
+            const target = document.getElementById(`view-${viewId}`);
+            if (target) {
+                target.classList.add('active');
+                // Scroll to top
+                document.querySelector('.view-container').scrollTop = 0;
+            }
+        });
+    });
 
     // 1. Security Gate: Only Admin 'yochanbr@gmail.com' can stay
     onAuthStateChanged(auth, (user) => {
@@ -31,31 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 2. Sidebar Navigation
-    const navButtons = document.querySelectorAll('.sidebar-nav .nav-btn');
-    const views = document.querySelectorAll('.admin-view');
-    const viewTitle = document.getElementById('view-title');
+    // Redundant for the new forced-mobile architecture
+    // Removing old sidebar nav loop...
 
-    navButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const viewId = btn.getAttribute('data-view');
-            
-            // UI Toggle
-            navButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            // View Switch
-            views.forEach(v => v.classList.remove('active'));
-            const target = document.getElementById(`view-${viewId}`);
-            if (target) target.classList.add('active');
-
-            // Update Header Title
-            if (viewTitle) viewTitle.textContent = btn.innerText.trim();
-
-            // Mobile Auto-close
-            if (window.innerWidth <= 1024) toggleSidebar();
-        });
-    });
 
     // 3. Challenge Forge (PUSH TO FIRESTORE)
     const pushChallengeBtn = document.getElementById('push-challenge-btn');
