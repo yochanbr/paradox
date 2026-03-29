@@ -1007,10 +1007,7 @@ input:checked + .slider:before {
     font-variation-settings: 'FILL' 1;
 }
 
-.save-btn.active .material-symbols-rounded {
-    color: var(--brand-blue);
-    font-variation-settings: 'FILL' 1;
-}
+
 
 /* JOURNAL VIEW */
 .journal-prompt {

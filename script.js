@@ -61,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Load User Stats & Feed
-            listenToUserSavedDox(user.uid);
             loadUserStats(user.uid);
             loadFeed();
             initRealtimeChallenges();
@@ -141,63 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Load Posts
     let currentFeedFilter = 'global';
-    window.currentUserSavedDox = [];
 
-    function listenToUserSavedDox(uid) {
-        onSnapshot(doc(db, "users", uid), (docSnap) => {
-            if (docSnap.exists()) {
-                window.currentUserSavedDox = docSnap.data().savedDox || [];
-                // Refresh feed rendering gently to show new bookmark UI
-                const activeFeedCards = document.querySelectorAll('.post-card');
-                activeFeedCards.forEach(card => {
-                    const id = card.dataset.id;
-                    const saveBtn = card.querySelector('.save-btn');
-                    if (saveBtn) {
-                        saveBtn.classList.toggle('active', window.currentUserSavedDox.includes(id));
-                    }
-                });
-            }
-        });
-    }
 
-    async function loadProfileSavedDox() {
-        const container = document.getElementById('profile-saved-dox');
-        if (!container || !auth.currentUser) return;
-
-        const savedIds = window.currentUserSavedDox || [];
-        if (savedIds.length === 0) {
-            container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">bookmark</span><p>No saved dox yet.</p></div>`;
-            return;
-        }
-
-        container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">sync</span><p>Loading saved paradoxes...</p></div>`;
-
-        try {
-            // Fetch multiple individual documents (works well for <100 saved items without complex IN limits)
-            const promises = savedIds.map(id => getDoc(doc(db, "posts", id)));
-            const docSnaps = await Promise.all(promises);
-
-            container.innerHTML = '';
-            let rendered = 0;
-
-            docSnaps.forEach(docSnap => {
-                if (docSnap.exists()) {
-                    rendered++;
-                    const postEl = createPostElement(docSnap.id, docSnap.data());
-                    container.appendChild(postEl);
-                }
-            });
-
-            if (rendered === 0) {
-                container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">bookmark_remove</span><p>Saved dox are no longer available.</p></div>`;
-            }
-        } catch (e) {
-            console.error("Error loading profile dox", e);
-            container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">error</span><p>Failed to load.</p></div>`;
-        }
-    }
-
-    document.getElementById('open-profile-btn')?.addEventListener('click', loadProfileSavedDox);
 
     async function loadFeed() {
         const feedContainer = document.getElementById('home-feed');
@@ -525,7 +469,6 @@ document.addEventListener('DOMContentLoaded', () => {
         div.dataset.id = id;
         
         const isLiked = post.likedBy?.includes(auth.currentUser?.uid);
-        const isSaved = window.currentUserSavedDox?.includes(id);
 
         div.innerHTML = `
             <div class="post-header">
@@ -545,15 +488,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="material-symbols-rounded" style="pointer-events: none;">chat_bubble</span>
                     <span class="comments-count">${post.commentsCount || 0}</span>
                 </button>
-                <button class="interaction-btn save-btn ${isSaved ? 'active' : ''}" data-id="${id}">
-                    <span class="material-symbols-rounded">bookmark</span>
-                </button>
             </div>
         `;
 
         // Direct Attachments for Flawless Mobile Touch
         const likeBtn = div.querySelector('.like-btn');
-        const saveBtn = div.querySelector('.save-btn');
         const commentBtn = div.querySelector('.comment-btn');
 
         const attachTouch = (btn, handler) => {
@@ -586,20 +525,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isLiked) {
                 notifyUser(post.authorId, "liked your paradox.");
             }
-        });
-
-        attachTouch(saveBtn, async (e) => {
-            if (e) e.stopPropagation();
-            if (!auth.currentUser) return showToast("Please login to save.");
-            const isSavedFlag = saveBtn.classList.contains('active');
-            
-            // Optimistic toggle
-            saveBtn.classList.toggle('active');
-
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            await setDoc(userRef, {
-                savedDox: isSavedFlag ? arrayRemove(id) : arrayUnion(id)
-            }, { merge: true });
         });
 
         attachTouch(commentBtn, (e) => {
