@@ -55,6 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (profileAvatar) profileAvatar.src = user.photoURL;
             if (headerAvatar) headerAvatar.src = user.photoURL;
 
+            // Update Diary View too
+            const diaryPfp = document.getElementById('diary-pfp');
+            const diaryName = document.getElementById('diary-name');
+            if (diaryPfp) diaryPfp.src = user.photoURL;
+            if (diaryName) diaryName.textContent = user.displayName;
+
             // Security: Check for Admin Portal
             if (adminPortalLink) {
                 adminPortalLink.style.display = isUserAdmin(user) ? 'flex' : 'none';
