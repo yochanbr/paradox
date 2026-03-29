@@ -1,0 +1,16 @@
+# General
+.DS_Store
+.gemini/
+logs/
+/tmp/
+
+# Firebase
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# Node (in case used later)
+node_modules/
+npm-debug.log*
+package-lock.json
