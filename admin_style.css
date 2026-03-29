@@ -68,8 +68,10 @@ body {
 @media (min-width: 450px) {
     .app-container {
         height: 850px;
+        margin: auto; /* Centering force */
         border-radius: var(--radius-lg);
-        box-shadow: 0 30px 80px rgba(0,0,0,0.15);
+        box-shadow: 0 40px 100px rgba(0,0,0,0.15);
+        border: 1px solid var(--border-light);
     }
 }
 

@@ -36,9 +36,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Security Gate: Only Admin 'yochanbr@gmail.com' can stay
     onAuthStateChanged(auth, (user) => {
-        if (!user || !isUserAdmin(user)) {
-            console.warn("Unauthorized Access Attempt");
-            window.location.href = "index.html"; // Redirect intruders
+        if (!user) {
+            console.warn("Unauthorized: No session");
+            window.location.href = "index.html";
+            return;
+        }
+
+        if (!isUserAdmin(user)) {
+            console.warn("Unauthorized: Not Admin", user.email);
+            window.location.href = "index.html"; 
+        } else {
+            console.log("Admin Authenticated:", user.email);
         }
     });
 
