@@ -3,7 +3,7 @@
  * Integrated with Firebase & Google Identity
  */
 
-import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, updateUserProfile, uploadUserAvatar } from "./auth.js";
+import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin } from "./auth.js";
 import { db } from "./firebase-config.js";
 import { 
     collection, addDoc, query, orderBy, onSnapshot, 

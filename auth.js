@@ -118,4 +118,4 @@ function isUserAdmin(user) {
 }
 
 // Export for application logic
-export { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, updateUserProfile };
+export { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, updateUserProfile, uploadUserAvatar };
