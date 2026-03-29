@@ -183,53 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 feedContainer.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">auto_stories</span><p>No dox found for this filter.</p></div>`;
             }
         });
-
-        // Event delegation for post interactions (Likes, Comments, Saves)
-        feedContainer.addEventListener('click', async (e) => {
-            const likeBtn = e.target.closest('.like-btn');
-            const saveBtn = e.target.closest('.save-btn');
-            const commentBtn = e.target.closest('.comment-btn');
-
-            if (likeBtn && auth.currentUser) {
-                const postId = likeBtn.dataset.id;
-                const authorId = likeBtn.dataset.author;
-                const isLiked = likeBtn.classList.contains('active');
-                
-                // Optimistic UI update
-                likeBtn.classList.toggle('active');
-                const countSpan = likeBtn.querySelector('.likes-count');
-                countSpan.textContent = parseInt(countSpan.textContent) + (isLiked ? -1 : 1);
-
-                const postRef = doc(db, "posts", postId);
-                await updateDoc(postRef, {
-                    likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid),
-                    likes: increment(isLiked ? -1 : 1)
-                });
-
-                if (!isLiked && authorId !== auth.currentUser.uid) {
-                    notifyUser(authorId, "liked your paradox.");
-                }
-            }
-
-            if (saveBtn && auth.currentUser) {
-                const postId = saveBtn.dataset.id;
-                const isSaved = saveBtn.classList.contains('active');
-                
-                // Optimistic UI
-                saveBtn.classList.toggle('active');
-
-                const userRef = doc(db, "users", auth.currentUser.uid);
-                await setDoc(userRef, {
-                    savedDox: isSaved ? arrayRemove(postId) : arrayUnion(postId)
-                }, { merge: true });
-            }
-
-            if (commentBtn) {
-                const postId = commentBtn.dataset.id;
-                const authorId = commentBtn.dataset.author;
-                openCommentsDrawer(postId, authorId);
-            }
-        });
     }
 
     // ==========================================
@@ -495,6 +448,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
             </div>
         `;
+
+        // Direct Attachments for Flawless Mobile Touch
+        const likeBtn = div.querySelector('.like-btn');
+        const saveBtn = div.querySelector('.save-btn');
+        const commentBtn = div.querySelector('.comment-btn');
+
+        likeBtn.addEventListener('click', async () => {
+            if (!auth.currentUser) return showToast("Please login to like.");
+            const isLiked = likeBtn.classList.contains('active');
+            
+            // Optimistic UI toggle immediately for responsiveness
+            likeBtn.classList.toggle('active');
+            const countSpan = likeBtn.querySelector('.likes-count');
+            countSpan.textContent = parseInt(countSpan.textContent) + (isLiked ? -1 : 1);
+
+            const postRef = doc(db, "posts", id);
+            await updateDoc(postRef, {
+                likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid),
+                likes: increment(isLiked ? -1 : 1)
+            });
+
+            // Fire notification if it's a fresh like
+            if (!isLiked) {
+                notifyUser(post.authorId, "liked your paradox.");
+            }
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            if (!auth.currentUser) return showToast("Please login to save.");
+            const isSavedFlag = saveBtn.classList.contains('active');
+            
+            // Optimistic toggle
+            saveBtn.classList.toggle('active');
+
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await setDoc(userRef, {
+                savedDox: isSavedFlag ? arrayRemove(id) : arrayUnion(id)
+            }, { merge: true });
+        });
+
+        commentBtn.addEventListener('click', () => {
+            openCommentsDrawer(id, post.authorId);
+        });
+
         return div;
     }
 
