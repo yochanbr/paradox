@@ -1641,59 +1641,71 @@ input:checked + .slider:before {
     transition: border-color 0.2s ease;
 }
 
+/* Pill Selectors (Goal Composer) */
 .pill-selector {
     display: flex;
-    background: var(--bg-surface-alt);
-    padding: 4px;
-    border-radius: var(--radius-md);
-    gap: 4px;
+    gap: 12px;
+    margin-top: 12px;
 }
 
 .pill-opt {
     flex: 1;
-    border: none;
-    background: transparent;
-    padding: 10px;
-    border-radius: var(--radius-sm);
-    font-family: var(--font-family);
-    font-size: 13px;
-    font-weight: 600;
+    padding: 12px 20px;
+    border-radius: 30px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
     color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .pill-opt.active {
-    background: white;
-    color: var(--text-primary);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    background: var(--brand-blue);
+    color: white;
+    border-color: var(--brand-blue);
+    box-shadow: 0 8px 16px rgba(58, 134, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.pill-opt:hover:not(.active) {
+    background: var(--bg-tertiary);
 }
 
 .day-chip-group {
     display: flex;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 10px;
+    margin-top: 12px;
 }
 
 .day-chip {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-surface-alt);
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .day-chip.active {
     background: var(--brand-blue);
     color: white;
-    box-shadow: 0 4px 12px rgba(98, 142, 255, 0.3);
+    border-color: var(--brand-blue);
+    box-shadow: 0 8px 16px rgba(58, 134, 255, 0.25);
+    transform: scale(1.1);
+}
+
+.day-chip:hover:not(.active) {
+    background: var(--bg-tertiary);
+    transform: translateY(-2px);
 }
 
 .form-footer {
