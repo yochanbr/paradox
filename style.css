@@ -1487,6 +1487,8 @@ input:checked + .slider:before {
     padding: 0 20px 24px;
     overflow-x: auto;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    user-select: none;
 }
 
 .month-display {
@@ -1506,7 +1508,7 @@ input:checked + .slider:before {
 
 .date-scroller {
     display: flex;
-    gap: 16px;
+    gap: 12px;
 }
 
 .date-item {
@@ -1514,7 +1516,7 @@ input:checked + .slider:before {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-width: 52px;
+    min-width: 60px;
     height: 72px;
     border-radius: var(--radius-md);
     background: white;
@@ -1567,16 +1569,18 @@ input:checked + .slider:before {
 
 .goal-input-large {
     width: 100%;
-    min-height: 80px;
-    border: none;
-    font-family: var(--font-family);
-    font-size: 20px;
-    font-weight: 600;
+    min-height: 120px;
+    padding: 20px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    color: var(--text-primary);
+    font-size: 18px; /* Great for mobile focus */
+    font-weight: 500;
+    line-height: 1.5;
     resize: none;
     outline: none;
-    color: var(--text-primary);
-    background: transparent;
-    padding: 0;
+    transition: border-color 0.2s ease;
 }
 
 .pill-selector {
@@ -1643,28 +1647,29 @@ input:checked + .slider:before {
    ========================================= */
 .mood-selector {
     display: flex;
-    justify-content: space-between;
-    background: var(--bg-surface-alt);
-    padding: 8px;
-    border-radius: var(--radius-lg);
+    gap: 12px;
+    overflow-x: auto;
+    padding: 12px 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
 
 .mood-opt {
-    width: 48px;
-    height: 48px;
-    border: none;
-    background: transparent;
-    border-radius: var(--radius-md);
+    flex: 0 0 56px; /* Larger target */
+    height: 56px;
+    border-radius: 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
-    color: var(--text-secondary);
+    transition: all 0.2s ease;
 }
 
 .mood-opt span {
-    font-size: 24px;
+    font-size: 28px;
+    color: var(--text-primary);
 }
 
 .mood-opt.active {
@@ -1859,7 +1864,9 @@ input:checked + .slider:before {
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE 10+ */
     scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; /* Native momentum */
     padding-bottom: 20px;
+    user-select: none; /* Prevent accidental text highlights */
 }
 
 .date-scroller-container::-webkit-scrollbar {
@@ -1868,7 +1875,7 @@ input:checked + .slider:before {
 
 .date-scroller {
     display: flex;
-    gap: 12px;
+    gap: 16px; /* Increased gap for better separation */
     padding: 0 20px;
     width: max-content;
 }
@@ -1878,9 +1885,9 @@ input:checked + .slider:before {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-width: 60px;
-    height: 80px;
-    border-radius: 16px;
+    min-width: 64px; /* Slightly wider */
+    height: 84px; /* More hit area */
+    border-radius: 18px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-subtle);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

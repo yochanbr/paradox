@@ -903,11 +903,18 @@ function initDateScroller() {
 
         scroller.appendChild(dateItem);
 
-        // Auto-center "Today"
+        // Interactive: Tap to Select & Center
+        dateItem.addEventListener('click', () => {
+            scroller.querySelectorAll('.date-item').forEach(el => el.classList.remove('active'));
+            dateItem.classList.add('active');
+            dateItem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        });
+
+        // Initial Auto-center "Today"
         if (day === today) {
             setTimeout(() => {
                 dateItem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }, 500);
+            }, 800);
         }
     }
 }
