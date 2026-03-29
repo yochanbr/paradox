@@ -7,7 +7,8 @@ import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin } 
 import { db } from "./firebase-config.js";
 import { 
     collection, addDoc, query, orderBy, onSnapshot, 
-    serverTimestamp, doc, updateDoc, increment, getDoc 
+    serverTimestamp, doc, updateDoc, increment, getDoc,
+    arrayUnion, arrayRemove, setDoc, where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -60,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Load User Stats & Feed
+            listenToUserSavedDox(user.uid);
             loadUserStats(user.uid);
             initRealtimeFeed();
             initRealtimeChallenges();
@@ -139,6 +141,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Load Posts
     let currentFeedFilter = 'global';
+    window.currentUserSavedDox = [];
+
+    function listenToUserSavedDox(uid) {
+        onSnapshot(doc(db, "users", uid), (docSnap) => {
+            if (docSnap.exists()) {
+                window.currentUserSavedDox = docSnap.data().savedDox || [];
+                // Refresh feed rendering gently to show new bookmark UI
+                const activeFeedCards = document.querySelectorAll('.post-card');
+                activeFeedCards.forEach(card => {
+                    const id = card.dataset.id;
+                    const saveBtn = card.querySelector('.save-btn');
+                    if (saveBtn) {
+                        saveBtn.classList.toggle('active', window.currentUserSavedDox.includes(id));
+                    }
+                });
+            }
+        });
+    }
 
     function initRealtimeFeed() {
         const feedContainer = document.getElementById('home-feed');
@@ -163,7 +183,172 @@ document.addEventListener('DOMContentLoaded', () => {
                 feedContainer.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">auto_stories</span><p>No dox found for this filter.</p></div>`;
             }
         });
+
+        // Event delegation for post interactions (Likes, Comments, Saves)
+        feedContainer.addEventListener('click', async (e) => {
+            const likeBtn = e.target.closest('.like-btn');
+            const saveBtn = e.target.closest('.save-btn');
+            const commentBtn = e.target.closest('.comment-btn');
+
+            if (likeBtn && auth.currentUser) {
+                const postId = likeBtn.dataset.id;
+                const authorId = likeBtn.dataset.author;
+                const isLiked = likeBtn.classList.contains('active');
+                
+                // Optimistic UI update
+                likeBtn.classList.toggle('active');
+                const countSpan = likeBtn.querySelector('.likes-count');
+                countSpan.textContent = parseInt(countSpan.textContent) + (isLiked ? -1 : 1);
+
+                const postRef = doc(db, "posts", postId);
+                await updateDoc(postRef, {
+                    likedBy: isLiked ? arrayRemove(auth.currentUser.uid) : arrayUnion(auth.currentUser.uid),
+                    likes: increment(isLiked ? -1 : 1)
+                });
+
+                if (!isLiked && authorId !== auth.currentUser.uid) {
+                    notifyUser(authorId, "liked your paradox.");
+                }
+            }
+
+            if (saveBtn && auth.currentUser) {
+                const postId = saveBtn.dataset.id;
+                const isSaved = saveBtn.classList.contains('active');
+                
+                // Optimistic UI
+                saveBtn.classList.toggle('active');
+
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                await setDoc(userRef, {
+                    savedDox: isSaved ? arrayRemove(postId) : arrayUnion(postId)
+                }, { merge: true });
+            }
+
+            if (commentBtn) {
+                const postId = commentBtn.dataset.id;
+                const authorId = commentBtn.dataset.author;
+                openCommentsDrawer(postId, authorId);
+            }
+        });
     }
+
+    // ==========================================
+    // 4.5 NOTIFICATIONS & COMMENTS LOGIC
+    // ==========================================
+    
+    async function notifyUser(recipientId, message) {
+        if (!recipientId || recipientId === auth.currentUser?.uid) return;
+        
+        await addDoc(collection(db, "user_notifications"), {
+            recipientId: recipientId,
+            senderName: auth.currentUser.displayName,
+            senderPhoto: auth.currentUser.photoURL,
+            message: message,
+            timestamp: serverTimestamp(),
+            read: false
+        });
+    }
+
+    let activeCommentUnsubscribe = null;
+    let activeCommentPostId = null;
+    let activeCommentPostAuthor = null;
+
+    function openCommentsDrawer(postId, authorId) {
+        activeCommentPostId = postId;
+        activeCommentPostAuthor = authorId;
+        
+        // Setup UI Profile for Input
+        const commenterAvatar = document.getElementById('commenter-avatar');
+        if (commenterAvatar && auth.currentUser) commenterAvatar.src = auth.currentUser.photoURL;
+
+        const commentsList = document.getElementById('comments-list');
+        const input = document.getElementById('comment-input');
+        const sendBtn = document.getElementById('send-comment-btn');
+        
+        input.value = '';
+        sendBtn.disabled = true;
+
+        if (activeCommentUnsubscribe) activeCommentUnsubscribe();
+        
+        commentsList.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">sync</span><p>Loading conversation...</p></div>`;
+        
+        const q = query(collection(db, "posts", postId, "comments"), orderBy("timestamp", "asc"));
+        
+        activeCommentUnsubscribe = onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) {
+                commentsList.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">forum</span><p>No comments yet. Be the first.</p></div>`;
+                return;
+            }
+            commentsList.innerHTML = '';
+            snapshot.forEach((docSnap) => {
+                const c = docSnap.data();
+                const div = document.createElement('div');
+                div.className = 'comment-bubble';
+                div.innerHTML = `
+                    <img src="${c.authorPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'}" class="tiny-avatar">
+                    <div class="comment-body">
+                        <h4>${c.authorName} <span>${c.timestamp?.toDate().toLocaleDateString() || 'Now'}</span></h4>
+                        <p>${c.text}</p>
+                    </div>
+                `;
+                commentsList.appendChild(div);
+            });
+            // Scroll to bottom
+            const drawerContent = commentsList.parentElement;
+            drawerContent.scrollTop = drawerContent.scrollHeight;
+        });
+
+        // Open Drawer
+        document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open'));
+        document.getElementById('comments-drawer').classList.add('open');
+    }
+
+    // Handle Comment Sending
+    const cInput = document.getElementById('comment-input');
+    const cBtn = document.getElementById('send-comment-btn');
+    
+    if (cInput && cBtn) {
+        cInput.addEventListener('input', () => { cBtn.disabled = cInput.value.trim().length === 0; });
+        
+        cBtn.addEventListener('click', async () => {
+            const text = cInput.value.trim();
+            if (!text || !activeCommentPostId) return;
+
+            cBtn.disabled = true;
+            try {
+                // Add to subcollection
+                await addDoc(collection(db, "posts", activeCommentPostId, "comments"), {
+                    text: text,
+                    authorId: auth.currentUser.uid,
+                    authorName: auth.currentUser.displayName,
+                    authorPhoto: auth.currentUser.photoURL,
+                    timestamp: serverTimestamp()
+                });
+
+                // Update post count
+                await updateDoc(doc(db, "posts", activeCommentPostId), {
+                    commentsCount: increment(1)
+                });
+                
+                // Notify Author
+                notifyUser(activeCommentPostAuthor, "commented on your paradox.");
+                
+                cInput.value = '';
+            } catch (err) {
+                console.error("Error commenting:", err);
+                cBtn.disabled = false;
+            }
+        });
+    }
+
+    // Close Comments
+    document.getElementById('close-comments-btn')?.addEventListener('click', () => {
+        document.getElementById('comments-drawer').classList.remove('open');
+        if (activeCommentUnsubscribe) {
+            activeCommentUnsubscribe();
+            activeCommentUnsubscribe = null;
+        }
+    });
 
     const filterOptions = document.querySelectorAll('.filter-opt');
     filterOptions.forEach(opt => {
@@ -210,44 +395,83 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Load Notifications (Real-time from Admin Broadcast)
+    // Load Notifications (Real-time from Admin Broadcasts + User Interactions)
     function initRealtimeNotifications() {
         const notiContainer = document.querySelector('.notifications-list');
         const badge = document.querySelector('.notification-badge');
         if (!notiContainer) return;
 
-        const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"));
-        onSnapshot(q, (snapshot) => {
-            if (snapshot.empty) {
+        let adminNotifs = [];
+        let userNotifs = [];
+
+        function renderNotifs() {
+            const allNotifs = [...adminNotifs, ...userNotifs].sort((a,b) => {
+                const tA = a.timestamp?.toMillis() || 0;
+                const tB = b.timestamp?.toMillis() || 0;
+                return tB - tA; // desc
+            });
+
+            if (allNotifs.length === 0) {
                 notiContainer.innerHTML = `<div class="empty-notif"><span class="material-symbols-rounded">notifications_off</span><p>No new updates.</p></div>`;
+                if(badge) badge.style.display = 'none';
                 return;
             }
+
             notiContainer.innerHTML = '';
-            let newNotifs = 0;
-            snapshot.forEach((doc) => {
-                const n = doc.data();
-                newNotifs++;
+            allNotifs.forEach(n => {
                 const item = document.createElement('div');
                 item.className = 'notification-item';
-                item.innerHTML = `
-                    <div class="noti-icon"><span class="material-symbols-rounded">campaign</span></div>
-                    <div class="noti-body">
-                        <h4>Admin Broadcast</h4>
-                        <p>${n.message}</p>
-                    </div>
-                `;
+                if (n.type === 'admin') {
+                    item.innerHTML = `
+                        <div class="noti-icon"><span class="material-symbols-rounded">campaign</span></div>
+                        <div class="noti-body">
+                            <h4>Admin Broadcast</h4>
+                            <p>${n.message}</p>
+                        </div>
+                    `;
+                } else {
+                    item.innerHTML = `
+                        <img src="${n.senderPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                        <div class="noti-body">
+                            <h4>${n.senderName} <span>${n.message}</span></h4>
+                            <p style="font-size:11px;color:var(--text-muted);margin-top:2px;">${n.timestamp?.toDate().toLocaleTimeString() || 'Just now'}</p>
+                        </div>
+                    `;
+                }
                 notiContainer.appendChild(item);
             });
-            if (badge && newNotifs > 0) {
+            if (badge) {
                 badge.style.display = 'block';
-                badge.textContent = newNotifs;
+                badge.textContent = allNotifs.length;
             }
+        }
+
+        // 1. Admin Broadcasts
+        const qAdmin = query(collection(db, "notifications"), orderBy("timestamp", "desc"));
+        onSnapshot(qAdmin, (snapshot) => {
+            adminNotifs = snapshot.docs.map(doc => ({ ...doc.data(), type: 'admin' }));
+            renderNotifs();
         });
+
+        // 2. User specific notifications
+        if (auth.currentUser) {
+            // No orderBy mapping to avoid complex index requirements at this stage. We sort client-side.
+            const qUser = query(collection(db, "user_notifications"), where("recipientId", "==", auth.currentUser.uid));
+            onSnapshot(qUser, (snapshot) => {
+                userNotifs = snapshot.docs.map(doc => ({ ...doc.data(), type: 'user' }));
+                renderNotifs();
+            });
+        }
     }
 
     function createPostElement(id, post) {
         const div = document.createElement('div');
         div.className = 'post-card';
+        div.dataset.id = id;
+        
+        const isLiked = post.likedBy?.includes(auth.currentUser?.uid);
+        const isSaved = window.currentUserSavedDox?.includes(id);
+
         div.innerHTML = `
             <div class="post-header">
                 <img src="${post.authorPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'}" class="post-avatar">
@@ -258,12 +482,17 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="post-content"><p>${post.text}</p></div>
             <div class="post-interactions">
-                <button class="interaction-btn like-btn" data-id="${id}">
+                <button class="interaction-btn like-btn ${isLiked ? 'active' : ''}" data-id="${id}" data-author="${post.authorId}">
                     <span class="material-symbols-rounded">favorite</span>
-                    <span>${post.likes || 0}</span>
+                    <span class="likes-count">${post.likes || 0}</span>
                 </button>
-                <button class="interaction-btn comment-btn"><span class="material-symbols-rounded">chat_bubble</span></button>
-                <button class="interaction-btn save-btn" data-id="${id}"><span class="material-symbols-rounded">bookmark</span></button>
+                <button class="interaction-btn comment-btn" data-id="${id}" data-author="${post.authorId}">
+                    <span class="material-symbols-rounded">chat_bubble</span>
+                    <span class="comments-count">${post.commentsCount || 0}</span>
+                </button>
+                <button class="interaction-btn save-btn ${isSaved ? 'active' : ''}" data-id="${id}">
+                    <span class="material-symbols-rounded">bookmark</span>
+                </button>
             </div>
         `;
         return div;

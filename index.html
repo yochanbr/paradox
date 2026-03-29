@@ -675,6 +675,33 @@
             </div>
         </div>
 
+        <!-- Comments Drawer -->
+        <div class="drawer drawer-secondary" id="comments-drawer">
+            <div class="drawer-header">
+                <button class="icon-btn" id="close-comments-btn">
+                    <span class="material-symbols-rounded">arrow_back</span>
+                </button>
+                <h2>Comments</h2>
+                <div style="width:24px"></div>
+            </div>
+            <div class="drawer-content drawer-content-flex">
+                <div class="comments-list" id="comments-list">
+                    <div class="empty-state-mini">
+                        <span class="material-symbols-rounded">forum</span>
+                        <p>No comments yet. Be the first.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Pinned input at bottom -->
+            <div class="comments-composer">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" class="tiny-avatar" id="commenter-avatar">
+                <input type="text" id="comment-input" placeholder="Add a comment...">
+                <button class="icon-btn send-btn" id="send-comment-btn" disabled>
+                    <span class="material-symbols-rounded">send</span>
+                </button>
+            </div>
+        </div>
+
     <!-- Login Ritual Overlay (Sync with Auth) -->
     <div id="login-overlay" class="login-overlay hidden">
         <div class="login-modal">
