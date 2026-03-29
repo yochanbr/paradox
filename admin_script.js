@@ -10,6 +10,19 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/fi
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // 0. Mobile Navigation Logic
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const menuToggle = document.getElementById('menu-toggle');
+
+    function toggleSidebar() {
+        sidebar?.classList.toggle('show');
+        overlay?.classList.toggle('show');
+    }
+
+    menuToggle?.addEventListener('click', toggleSidebar);
+    overlay?.addEventListener('click', toggleSidebar);
+
     // 1. Security Gate: Only Admin 'yochanbr@gmail.com' can stay
     onAuthStateChanged(auth, (user) => {
         if (!user || !isUserAdmin(user)) {
@@ -21,14 +34,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Sidebar Navigation
     const navButtons = document.querySelectorAll('.sidebar-nav .nav-btn');
     const views = document.querySelectorAll('.admin-view');
+    const viewTitle = document.getElementById('view-title');
 
     navButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const viewId = btn.getAttribute('data-view');
+            
+            // UI Toggle
             navButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+
+            // View Switch
             views.forEach(v => v.classList.remove('active'));
-            document.getElementById(`view-${viewId}`)?.classList.add('active');
+            const target = document.getElementById(`view-${viewId}`);
+            if (target) target.classList.add('active');
+
+            // Update Header Title
+            if (viewTitle) viewTitle.textContent = btn.innerText.trim();
+
+            // Mobile Auto-close
+            if (window.innerWidth <= 1024) toggleSidebar();
         });
     });
 

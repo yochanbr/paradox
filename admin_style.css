@@ -336,3 +336,120 @@ body {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
+/* Dashboard Sidebar Toggle (Mobile) */
+.sidebar.show {
+    left: 0 !important;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.3s;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Mobile Header (Hidden by default) */
+.mobile-header {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.menu-toggle {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 1024px) {
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        height: 100vh;
+        z-index: 1000;
+        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 20px 0 50px rgba(0,0,0,0.5);
+    }
+
+    .content-canvas {
+        padding: 24px 20px;
+    }
+
+    .mobile-header {
+        display: flex;
+    }
+
+    .logo {
+        font-size: 20px;
+    }
+
+    .content-header {
+        display: none; /* Stats row handles the view title */
+    }
+
+    .bento-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .stats-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 20px;
+    }
+
+    .stat-card h3 {
+        font-size: 28px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-wrapper {
+        display: block;
+        overflow-y: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .logo span {
+        display: inline;
+    }
+    
+    .logo {
+        font-size: 18px;
+    }
+
+    .stat-card h3 {
+        font-size: 24px;
+    }
+
+    .bento-item {
+        padding: 24px 20px;
+    }
+}

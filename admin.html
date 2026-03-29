@@ -12,7 +12,8 @@
 
     <div class="admin-wrapper">
         <!-- Dashboard Sidebar -->
-        <aside class="sidebar">
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h1 class="logo">Paradox<span>.</span></h1>
                 <span class="badge">Admin</span>
@@ -47,8 +48,18 @@
 
         <!-- Main Dashboard Canvas -->
         <main class="content-canvas">
+            <header class="mobile-header">
+                <button class="menu-toggle" id="menu-toggle">
+                    <span class="material-symbols-rounded">menu</span>
+                </button>
+                <div class="logo">Paradox<span>.</span></div>
+                <div class="header-right">
+                    <span class="badge">Admin</span>
+                </div>
+            </header>
+
             <header class="content-header">
-                <h2>Command Center</h2>
+                <h2 id="view-title">Command Center</h2>
                 <div class="system-status">
                     <div class="status-indicator online"></div>
                     Firebase: <span>Dev Mode</span>
