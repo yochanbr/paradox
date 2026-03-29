@@ -895,6 +895,64 @@ input:checked + .slider:before {
     scrollbar-width: none;
 }
 
+/* Pill Selectors (Goal Composer) */
+.pill-selector {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.pill-opt {
+    padding: 10px 18px;
+    border-radius: 30px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pill-opt.active {
+    background: var(--brand-blue);
+    color: white;
+    border-color: var(--brand-blue);
+}
+
+.day-chip-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.day-chip {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.day-chip.active {
+    background: var(--brand-blue);
+    color: white;
+    border-color: var(--brand-blue);
+    transform: scale(1.1);
+}
+
+.day-chip:hover:not(.active) {
+    background: var(--bg-tertiary);
+}
+
 .trend-pill {
     background: white;
     padding: 8px 16px;

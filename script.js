@@ -861,6 +861,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initDates();
     initDateScroller(); // Launch the dynamic date scroller
+    initGoalComposerListeners(); // Mobilize the intention form
 });
 
 // ==========================================
@@ -917,4 +918,37 @@ function initDateScroller() {
             }, 800);
         }
     }
+}
+
+// ==========================================
+// 9. GOAL COMPOSER ENGINE (TOUCH FIX)
+// ==========================================
+
+function initGoalComposerListeners() {
+    // 1. Time Pill Selectors (Today/Tomorrow/Custom)
+    const pills = document.querySelectorAll('.pill-opt');
+    const customDateContainer = document.getElementById('custom-date-container');
+
+    pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            pills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+
+            // Toggle Custom Date Input
+            if (pill.getAttribute('data-time') === 'custom') {
+                if (customDateContainer) customDateContainer.style.display = 'block';
+            } else {
+                if (customDateContainer) customDateContainer.style.display = 'none';
+            }
+        });
+    });
+
+    // 2. Day Chip Multi-Select
+    const dayChips = document.querySelectorAll('.day-chip');
+    dayChips.forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            e.preventDefault(); // Standard for buttons in forms
+            chip.classList.toggle('active');
+        });
+    });
 }
