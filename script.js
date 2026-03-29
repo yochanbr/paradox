@@ -951,4 +951,65 @@ function initGoalComposerListeners() {
             chip.classList.toggle('active');
         });
     });
+
+    // 3. Save Intention Button
+    const saveGoalBtn = document.getElementById('save-goal-btn');
+    const goalInput = document.querySelector('.goal-input-large');
+    const timeInput = document.querySelector('.form-section input[type="time"]');
+
+    saveGoalBtn?.addEventListener('click', async () => {
+        if (!auth.currentUser) {
+            showToast("Login to set intentions.");
+            return;
+        }
+
+        const text = goalInput.value.trim();
+        if (!text) {
+            showToast("What is your intention?");
+            return;
+        }
+
+        const activePill = document.querySelector('.pill-opt.active');
+        const activeDays = Array.from(document.querySelectorAll('.day-chip.active')).map(c => c.textContent);
+        const selectedTime = timeInput ? timeInput.value : "08:00";
+        
+        let targetDate = new Date();
+        const type = activePill ? activePill.getAttribute('data-time') : 'today';
+        if (type === 'tomorrow') {
+            targetDate.setDate(targetDate.getDate() + 1);
+        } else if (type === 'custom') {
+            const customDate = document.getElementById('custom-goal-date');
+            if (customDate && customDate.value) targetDate = new Date(customDate.value);
+        }
+
+        try {
+            saveGoalBtn.disabled = true;
+            saveGoalBtn.textContent = "Setting Intention...";
+
+            await addDoc(collection(db, "goals"), {
+                uid: auth.currentUser.uid,
+                text: text,
+                timeType: type,
+                targetDate: targetDate.toISOString(),
+                repeatDays: activeDays,
+                reminderTime: selectedTime,
+                status: "active",
+                createdAt: serverTimestamp()
+            });
+
+            showToast("Intention Set.");
+            
+            // Success Routine
+            goalInput.value = '';
+            dayChips.forEach(c => c.classList.remove('active'));
+            document.querySelector('.drawer-overlay.active')?.click(); // Close drawer
+            
+        } catch (err) {
+            console.error("Save Failed", err);
+            showToast("Couldn't save intention.");
+        } finally {
+            saveGoalBtn.disabled = false;
+            saveGoalBtn.textContent = "Set Intention";
+        }
+    });
 }
