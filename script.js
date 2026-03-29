@@ -8,7 +8,7 @@ import { db } from "./firebase-config.js";
 import { 
     collection, addDoc, query, orderBy, onSnapshot, 
     serverTimestamp, doc, updateDoc, increment, getDoc,
-    arrayUnion, arrayRemove, setDoc, where
+    arrayUnion, arrayRemove, setDoc, where, getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Load User Stats & Feed
             listenToUserSavedDox(user.uid);
             loadUserStats(user.uid);
-            initRealtimeFeed();
+            loadFeed();
             initRealtimeChallenges();
             initRealtimeNotifications();
         } else {
@@ -160,12 +160,55 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function initRealtimeFeed() {
+    async function loadProfileSavedDox() {
+        const container = document.getElementById('profile-saved-dox');
+        if (!container || !auth.currentUser) return;
+
+        const savedIds = window.currentUserSavedDox || [];
+        if (savedIds.length === 0) {
+            container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">bookmark</span><p>No saved dox yet.</p></div>`;
+            return;
+        }
+
+        container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">sync</span><p>Loading saved paradoxes...</p></div>`;
+
+        try {
+            // Fetch multiple individual documents (works well for <100 saved items without complex IN limits)
+            const promises = savedIds.map(id => getDoc(doc(db, "posts", id)));
+            const docSnaps = await Promise.all(promises);
+
+            container.innerHTML = '';
+            let rendered = 0;
+
+            docSnaps.forEach(docSnap => {
+                if (docSnap.exists()) {
+                    rendered++;
+                    const postEl = createPostElement(docSnap.id, docSnap.data());
+                    container.appendChild(postEl);
+                }
+            });
+
+            if (rendered === 0) {
+                container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">bookmark_remove</span><p>Saved dox are no longer available.</p></div>`;
+            }
+        } catch (e) {
+            console.error("Error loading profile dox", e);
+            container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">error</span><p>Failed to load.</p></div>`;
+        }
+    }
+
+    document.getElementById('open-profile-btn')?.addEventListener('click', loadProfileSavedDox);
+
+    async function loadFeed() {
         const feedContainer = document.getElementById('home-feed');
         if (!feedContainer) return;
-        const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
-
-        onSnapshot(q, (snapshot) => {
+        
+        feedContainer.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">sync</span><p>Loading paradoxes...</p></div>`;
+        
+        try {
+            const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+            const snapshot = await getDocs(q);
+            
             feedContainer.innerHTML = '';
             let hasPosts = false;
             snapshot.forEach((doc) => {
@@ -182,8 +225,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!hasPosts) {
                 feedContainer.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">auto_stories</span><p>No dox found for this filter.</p></div>`;
             }
-        });
+        } catch (e) {
+            console.error("Failed to load feed", e);
+            feedContainer.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">error</span><p>Could not load paradoxes.</p></div>`;
+        }
     }
+
+    // Export so filter/refresh buttons can trigger it manually
+    window.refreshMainFeed = loadFeed;
 
     // ==========================================
     // 4.5 NOTIFICATIONS & COMMENTS LOGIC
@@ -205,10 +254,38 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeCommentUnsubscribe = null;
     let activeCommentPostId = null;
     let activeCommentPostAuthor = null;
+    let activeCommentParentId = null; // Used for replying
+
+    function renderCommentTree(commentsList, commentsMap, parentId = null, depth = 0) {
+        const children = commentsMap.get(parentId) || [];
+        
+        children.forEach(c => {
+            const div = document.createElement('div');
+            // Add indentation logic for replies
+            div.className = depth === 0 ? 'comment-bubble' : 'comment-bubble comment-reply';
+            // Cap depth visual indentation to prevent squeezing
+            const indent = Math.min(depth * 24, 48); 
+            if (depth > 0) div.style.marginLeft = `${indent}px`;
+
+            div.innerHTML = `
+                <img src="${c.authorPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'}" class="tiny-avatar">
+                <div class="comment-body">
+                    <h4>${c.authorName} <span>${c.timestamp?.toDate().toLocaleDateString() || 'Now'}</span></h4>
+                    <p>${c.text}</p>
+                    <button class="reply-trigger-btn" data-id="${c.id}" data-name="${c.authorName}">Reply</button>
+                </div>
+            `;
+            commentsList.appendChild(div);
+
+            // Recursively render children
+            renderCommentTree(commentsList, commentsMap, c.id, depth + 1);
+        });
+    }
 
     function openCommentsDrawer(postId, authorId) {
         activeCommentPostId = postId;
         activeCommentPostAuthor = authorId;
+        activeCommentParentId = null;
         
         // Setup UI Profile for Input
         const commenterAvatar = document.getElementById('commenter-avatar');
@@ -219,6 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sendBtn = document.getElementById('send-comment-btn');
         
         input.value = '';
+        input.placeholder = 'Add a comment...';
         sendBtn.disabled = true;
 
         if (activeCommentUnsubscribe) activeCommentUnsubscribe();
@@ -233,19 +311,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             commentsList.innerHTML = '';
+            
+            // Build adjacency list for tree
+            const commentsMap = new Map();
             snapshot.forEach((docSnap) => {
-                const c = docSnap.data();
-                const div = document.createElement('div');
-                div.className = 'comment-bubble';
-                div.innerHTML = `
-                    <img src="${c.authorPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'}" class="tiny-avatar">
-                    <div class="comment-body">
-                        <h4>${c.authorName} <span>${c.timestamp?.toDate().toLocaleDateString() || 'Now'}</span></h4>
-                        <p>${c.text}</p>
-                    </div>
-                `;
-                commentsList.appendChild(div);
+                const c = { id: docSnap.id, ...docSnap.data() };
+                const pId = c.parentId || null;
+                if (!commentsMap.has(pId)) commentsMap.set(pId, []);
+                commentsMap.get(pId).push(c);
             });
+
+            renderCommentTree(commentsList, commentsMap, null, 0);
+
+            // Wire Reply Buttons
+            commentsList.querySelectorAll('.reply-trigger-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    activeCommentParentId = btn.dataset.id;
+                    input.placeholder = `Replying to @${btn.dataset.name}...`;
+                    input.focus();
+                });
+            });
+
             // Scroll to bottom
             const drawerContent = commentsList.parentElement;
             drawerContent.scrollTop = drawerContent.scrollHeight;
@@ -275,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     authorId: auth.currentUser.uid,
                     authorName: auth.currentUser.displayName,
                     authorPhoto: auth.currentUser.photoURL,
+                    parentId: activeCommentParentId, // Stores nest tree mapping
                     timestamp: serverTimestamp()
                 });
 
@@ -284,9 +371,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 // Notify Author
-                notifyUser(activeCommentPostAuthor, "commented on your paradox.");
+                notifyUser(activeCommentPostAuthor, "replied to your paradox.");
                 
                 cInput.value = '';
+                cInput.placeholder = 'Add a comment...';
+                activeCommentParentId = null;
             } catch (err) {
                 console.error("Error commenting:", err);
                 cBtn.disabled = false;
@@ -301,18 +390,31 @@ document.addEventListener('DOMContentLoaded', () => {
             activeCommentUnsubscribe();
             activeCommentUnsubscribe = null;
         }
+        activeCommentParentId = null;
+        const cInput = document.getElementById('comment-input');
+        if (cInput) cInput.placeholder = 'Add a comment...';
     });
 
     const filterOptions = document.querySelectorAll('.filter-opt');
     filterOptions.forEach(opt => {
         opt.addEventListener('click', () => {
-            filterOptions.forEach(o => o.classList.remove('active-filter'));
-            opt.classList.add('active-filter');
             currentFeedFilter = opt.dataset.filter;
-            document.querySelector('.section-title h2').textContent = currentFeedFilter === 'mine' ? 'My Dox' : 'Daily Dox';
-            document.getElementById('feed-filter-drawer')?.classList.remove('open');
-            initRealtimeFeed(); // Reload feed with new filter
+            filterOptions.forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+            
+            const headerTitle = document.querySelector('.section-title h2');
+            if (headerTitle) {
+                headerTitle.textContent = currentFeedFilter === 'global' ? 'Daily Dox' : 'My Dox';
+            }
+            
+            document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open'));
+            window.refreshMainFeed(); // Hard reload the feed with new filter
         });
+    });
+
+    // Refresh Feed Button
+    document.getElementById('refresh-feed-btn')?.addEventListener('click', () => {
+        window.refreshMainFeed();
     });
 
     // Load Challenges (Real-time from Admin)
@@ -434,13 +536,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
             <div class="post-content"><p>${post.text}</p></div>
-            <div class="post-interactions">
+            <div class="post-interactions" style="z-index: 5;">
                 <button class="interaction-btn like-btn ${isLiked ? 'active' : ''}" data-id="${id}" data-author="${post.authorId}">
-                    <span class="material-symbols-rounded">favorite</span>
+                    <span class="material-symbols-rounded" style="pointer-events: none;">favorite</span>
                     <span class="likes-count">${post.likes || 0}</span>
                 </button>
                 <button class="interaction-btn comment-btn" data-id="${id}" data-author="${post.authorId}">
-                    <span class="material-symbols-rounded">chat_bubble</span>
+                    <span class="material-symbols-rounded" style="pointer-events: none;">chat_bubble</span>
                     <span class="comments-count">${post.commentsCount || 0}</span>
                 </button>
                 <button class="interaction-btn save-btn ${isSaved ? 'active' : ''}" data-id="${id}">
@@ -454,8 +556,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const saveBtn = div.querySelector('.save-btn');
         const commentBtn = div.querySelector('.comment-btn');
 
-        likeBtn.addEventListener('click', async () => {
+        const attachTouch = (btn, handler) => {
+            btn.addEventListener('click', handler);
+            // Fallback for strict mobile views
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // stop ghost click
+                handler(e);
+            }, { passive: false });
+        };
+
+        attachTouch(likeBtn, async (e) => {
+            if (e) e.stopPropagation();
             if (!auth.currentUser) return showToast("Please login to like.");
+            
             const isLiked = likeBtn.classList.contains('active');
             
             // Optimistic UI toggle immediately for responsiveness
@@ -475,7 +588,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        saveBtn.addEventListener('click', async () => {
+        attachTouch(saveBtn, async (e) => {
+            if (e) e.stopPropagation();
             if (!auth.currentUser) return showToast("Please login to save.");
             const isSavedFlag = saveBtn.classList.contains('active');
             
@@ -488,7 +602,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }, { merge: true });
         });
 
-        commentBtn.addEventListener('click', () => {
+        attachTouch(commentBtn, (e) => {
+            if (e) e.stopPropagation();
             openCommentsDrawer(id, post.authorId);
         });
 

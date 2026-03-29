@@ -72,7 +72,10 @@
                 </section>
                 <div class="section-title">
                     <h2>Daily Dox</h2>
-                    <button class="filter-btn" id="open-feed-filter-btn"><span class="material-symbols-rounded">tune</span></button>
+                    <div style="display:flex; gap:8px;">
+                        <button class="filter-btn" id="refresh-feed-btn" title="Refresh Feed"><span class="material-symbols-rounded">refresh</span></button>
+                        <button class="filter-btn" id="open-feed-filter-btn" title="Filter Feed"><span class="material-symbols-rounded">tune</span></button>
+                    </div>
                 </div>
 
                 <!-- NEW: Home Composer Bar -->
@@ -274,14 +277,6 @@
                         <div class="item-left">
                             <span class="material-symbols-rounded">edit_document</span>
                             <span>Diary (Edit Profile)</span>
-                        </div>
-                        <span class="material-symbols-rounded icon-subtle">chevron_right</span>
-                    </button>
-
-                    <button class="list-item" id="open-saved-dox-btn">
-                        <div class="item-left">
-                            <span class="material-symbols-rounded">bookmark</span>
-                            <span>Saved Dox</span>
                         </div>
                         <span class="material-symbols-rounded icon-subtle">chevron_right</span>
                     </button>

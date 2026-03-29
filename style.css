@@ -501,6 +501,24 @@ body {
 .comment-body h4 span { font-size: 11px; color: var(--text-muted); font-weight: 400; }
 .comment-body p { font-size: 14px; color: var(--text-primary); line-height: 1.4; }
 
+.reply-trigger-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 8px;
+    cursor: pointer;
+    padding: 0;
+}
+.reply-trigger-btn:active { opacity: 0.7; }
+
+.comment-reply {
+    margin-left: 24px;
+    border-left: 2px solid var(--border-light);
+    padding-left: 12px;
+}
+
 .comments-composer {
     display: flex;
     align-items: center;
