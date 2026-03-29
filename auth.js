@@ -2,9 +2,10 @@
  * PARADOX - IDENTITY & AUTH
  */
 
-import { auth, provider, db } from "./firebase-config.js";
+import { auth, provider, db, storage } from "./firebase-config.js";
 import { signInWithPopup, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const ADMIN_EMAIL = "yochanbr@gmail.com";
 
@@ -36,6 +37,21 @@ async function signOutUser() {
         window.location.reload(); // Refresh to show login ritual
     } catch (error) {
         console.error("Sign Out Error:", error);
+    }
+}
+
+/**
+ * Upload a user's profile picture to Firebase Storage
+ */
+async function uploadUserAvatar(uid, file) {
+    try {
+        const storageRef = ref(storage, `avatars/${uid}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        return downloadURL;
+    } catch (error) {
+        console.error("Avatar Upload Error:", error);
+        throw error;
     }
 }
 

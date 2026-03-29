@@ -3,7 +3,7 @@
  * Integrated with Firebase & Google Identity
  */
 
-import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, updateUserProfile } from "./auth.js";
+import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, updateUserProfile, uploadUserAvatar } from "./auth.js";
 import { db } from "./firebase-config.js";
 import { 
     collection, addDoc, query, orderBy, onSnapshot, 
@@ -201,11 +201,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load Posts
     let currentFeedFilter = 'global';
 
+    // ==========================================
+    // Profile Edit State
+    // ==========================================
+    let stagedPfpFile = null;
+
+    // Handle Trigger File Input
+    document.querySelector('.change-pfp-btn')?.addEventListener('click', () => {
+        document.getElementById('pfp-file-input')?.click();
+    });
+
+    // Handle File Selection (Preview)
+    document.getElementById('pfp-file-input')?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            stagedPfpFile = file;
+            const reader = new FileReader();
+            reader.onload = (re) => {
+                if (profileAvatar) profileAvatar.src = re.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
     // Handle Profile Update
     document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
         const newName = document.getElementById('diary-name-input').value.trim();
-        const newPfp = document.getElementById('diary-pfp-input').value.trim();
-        
         if (!newName) return showToast("Name cannot be empty.");
 
         const btn = document.getElementById('save-profile-btn');
@@ -213,13 +234,25 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            await updateUserProfile(newName, newPfp);
+            let finalPhotoURL = auth.currentUser.photoURL;
+
+            // 1. Upload new picture if staged
+            if (stagedPfpFile) {
+                showToast("Uploading new photo...");
+                finalPhotoURL = await uploadUserAvatar(auth.currentUser.uid, stagedPfpFile);
+            }
+
+            // 2. Update Profile
+            await updateUserProfile(newName, finalPhotoURL);
             showToast("Profile Updated");
             document.getElementById('diary-drawer').classList.remove('open');
+            
             // Refresh Header & Profile UI
             if (profileName) profileName.textContent = newName;
-            if (profileAvatar) profileAvatar.src = newPfp || profileAvatar.src;
-            if (headerAvatar) headerAvatar.src = newPfp || headerAvatar.src;
+            if (profileAvatar) profileAvatar.src = finalPhotoURL;
+            if (headerAvatar) headerAvatar.src = finalPhotoURL;
+            
+            stagedPfpFile = null; // Clear staged file
         } catch (err) {
             console.error(err);
             showToast("Failed to update profile.");
@@ -232,10 +265,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Populate Diary Input on open
     document.getElementById('open-diary-btn')?.addEventListener('click', () => {
         const nameInput = document.getElementById('diary-name-input');
-        const pfpInput = document.getElementById('diary-pfp-input');
         if (auth.currentUser) {
             if (nameInput) nameInput.value = auth.currentUser.displayName;
-            if (pfpInput) pfpInput.value = auth.currentUser.photoURL || "";
+            if (profileAvatar) profileAvatar.src = auth.currentUser.photoURL;
         }
     });
 
