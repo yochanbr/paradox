@@ -136,9 +136,66 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 4. REAL-TIME DATABASE SYNC (FIRESTORE)
+    // 4. LOADING SKELETONS & FEED ENGINE
     // ==========================================
     
+    function renderSkeletonPosts(container, count = 3) {
+        if (!container) return;
+        let html = '';
+        for (let i = 0; i < count; i++) {
+            html += `
+                <div class="skeleton-post">
+                    <div class="skeleton-header">
+                        <div class="skeleton skeleton-avatar"></div>
+                        <div class="skeleton-meta">
+                            <div class="skeleton skeleton-name"></div>
+                            <div class="skeleton skeleton-date"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton skeleton-content-line"></div>
+                    <div class="skeleton skeleton-content-line"></div>
+                    <div class="skeleton skeleton-content-line short"></div>
+                    <div class="skeleton-footer">
+                        <div class="skeleton skeleton-btn"></div>
+                        <div class="skeleton skeleton-btn"></div>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    function renderSkeletonChallenges(container) {
+        if (!container) return;
+        container.innerHTML = `
+            <div class="skeleton-challenge">
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-rule"></div>
+                <div class="skeleton skeleton-rule" style="width: 80%;"></div>
+                <div class="skeleton-meta-grid">
+                    <div class="skeleton" style="width: 80px; height: 32px; border-radius: 8px;"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderSkeletonNotifications(container, count = 4) {
+        if (!container) return;
+        let html = '';
+        for (let i = 0; i < count; i++) {
+            html += `
+                <div class="skeleton-notif">
+                    <div class="skeleton skeleton-notif-avatar"></div>
+                    <div class="skeleton-notif-body">
+                        <div class="skeleton" style="width: 50%; height: 12px; margin-bottom: 8px;"></div>
+                        <div class="skeleton" style="width: 80%; height: 8px;"></div>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
     // Load Posts
     let currentFeedFilter = 'global';
 
@@ -176,24 +233,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('my-dox-list');
         if (!container || !auth.currentUser) return;
 
-        container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">sync</span><p>Fetching your paradoxes...</p></div>`;
+        renderSkeletonPosts(container, 3);
 
         try {
-            const q = query(collection(db, "posts"), where("authorId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
-            const snap = await getDocs(q);
+            // FIX: If this exact query is stuck, it's usually a missing composite index on Firestore.
+            // We'll try to fetch with a fallback: query without order first, then sort locally to avoid blocking user.
+            let snap;
+            try {
+                const q = query(collection(db, "posts"), where("authorId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
+                snap = await getDocs(q);
+            } catch (indexError) {
+                console.warn("Index not found, falling back to local sort.", indexError);
+                const fallbackQ = query(collection(db, "posts"), where("authorId", "==", auth.currentUser.uid));
+                snap = await getDocs(fallbackQ);
+            }
             
             if (snap.empty) {
                 container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">history_edu</span><p>You haven't shared anything yet.</p></div>`;
                 return;
             }
 
+            // Convert scrollable data and sort locally (fallback)
+            const postsArr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            postsArr.sort((a,b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
             container.innerHTML = '';
-            snap.forEach(docSnap => {
-                container.appendChild(createPostElement(docSnap.id, docSnap.data()));
+            postsArr.forEach(post => {
+                container.appendChild(createPostElement(post.id, post));
             });
         } catch (e) {
             console.error(e);
-            container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">error</span><p>Failed to load.</p></div>`;
+            container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">error</span><p>Failed to load. Link to index might be in console.</p></div>`;
         }
     }
 
@@ -203,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const feedContainer = document.getElementById('home-feed');
         if (!feedContainer) return;
         
-        feedContainer.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">sync</span><p>Loading paradoxes...</p></div>`;
+        renderSkeletonPosts(feedContainer, 4);
         
         try {
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
@@ -422,6 +492,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const challengesContainer = document.getElementById('challenges-container');
         if (!challengesContainer) return;
 
+        renderSkeletonChallenges(challengesContainer);
+
         const q = query(collection(db, "challenges"), orderBy("timestamp", "desc"));
         onSnapshot(q, (snapshot) => {
             if (snapshot.empty) {
@@ -452,9 +524,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load Notifications (Real-time from Admin Broadcasts + User Interactions)
     function initRealtimeNotifications() {
-        const notiContainer = document.querySelector('.notifications-list');
+        const notiContainer = document.querySelector('.notification-list'); // Fix: Was targeting .notifications-list in error above, but drawer ID is #notification-list
         const badge = document.querySelector('.notification-badge');
         if (!notiContainer) return;
+
+        renderSkeletonNotifications(notiContainer, 5);
 
         let adminNotifs = [];
         let userNotifs = [];
