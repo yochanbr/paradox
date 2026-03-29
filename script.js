@@ -3,12 +3,12 @@
  * Integrated with Firebase & Google Identity
  */
 
-import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin } from "./auth.js";
+import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, updateUserProfile } from "./auth.js";
 import { db } from "./firebase-config.js";
 import { 
     collection, addDoc, query, orderBy, onSnapshot, 
     serverTimestamp, doc, updateDoc, increment, getDoc,
-    arrayUnion, arrayRemove, setDoc, where, getDocs
+    arrayUnion, arrayRemove, setDoc, where, getDocs, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -112,9 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
     wireDrawer('open-create-btn', 'create-drawer', 'close-create-btn');
     wireDrawer('open-profile-btn', 'profile-drawer', 'close-profile-btn');
     wireDrawer('open-notifications-btn', 'notification-drawer', 'close-notifications-btn');
-    wireDrawer('open-saved-dox-btn', 'saved-dox-drawer', 'close-saved-dox-btn');
     wireDrawer('open-my-public-dox-btn', 'my-public-dox-drawer', 'close-my-public-dox-btn');
     wireDrawer('open-feed-filter-btn', 'feed-filter-drawer', 'close-feed-filter-btn');
+    wireDrawer('open-diary-btn', 'diary-drawer', 'close-diary-btn');
+    wireDrawer('close-edit-post-btn', 'edit-post-drawer', 'close-edit-post-btn'); // reusing wireDrawer for closing too
 
     // Composer Triggers
     const composers = [
@@ -141,7 +142,62 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load Posts
     let currentFeedFilter = 'global';
 
+    // Handle Profile Update
+    document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
+        const newName = document.getElementById('diary-name-input').value.trim();
+        if (!newName) return showToast("Name cannot be empty.");
 
+        const btn = document.getElementById('save-profile-btn');
+        btn.textContent = "Saving...";
+        btn.disabled = true;
+
+        try {
+            await updateUserProfile(newName);
+            showToast("Profile Updated");
+            document.getElementById('diary-drawer').classList.remove('open');
+            // Refresh Header & Profile UI
+            if (profileName) profileName.textContent = newName;
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to update profile.");
+        } finally {
+            btn.textContent = "Save Changes";
+            btn.disabled = false;
+        }
+    });
+
+    // Populate Diary Input on open
+    document.getElementById('open-diary-btn')?.addEventListener('click', () => {
+        const input = document.getElementById('diary-name-input');
+        if (input && auth.currentUser) input.value = auth.currentUser.displayName;
+    });
+
+    async function loadMyPublicDox() {
+        const container = document.getElementById('my-dox-list');
+        if (!container || !auth.currentUser) return;
+
+        container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">sync</span><p>Fetching your paradoxes...</p></div>`;
+
+        try {
+            const q = query(collection(db, "posts"), where("authorId", "==", auth.currentUser.uid), orderBy("timestamp", "desc"));
+            const snap = await getDocs(q);
+            
+            if (snap.empty) {
+                container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">history_edu</span><p>You haven't shared anything yet.</p></div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            snap.forEach(docSnap => {
+                container.appendChild(createPostElement(docSnap.id, docSnap.data()));
+            });
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = `<div class="empty-state-mini"><span class="material-symbols-rounded">error</span><p>Failed to load.</p></div>`;
+        }
+    }
+
+    document.getElementById('open-my-public-dox-btn')?.addEventListener('click', loadMyPublicDox);
 
     async function loadFeed() {
         const feedContainer = document.getElementById('home-feed');
@@ -469,14 +525,31 @@ document.addEventListener('DOMContentLoaded', () => {
         div.dataset.id = id;
         
         const isLiked = post.likedBy?.includes(auth.currentUser?.uid);
+        const isAuthor = auth.currentUser && post.authorId === auth.currentUser.uid;
 
         div.innerHTML = `
             <div class="post-header">
-                <img src="${post.authorPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'}" class="post-avatar">
-                <div class="post-meta">
-                    <h4>${post.authorName}</h4>
-                    <span>${post.timestamp?.toDate().toLocaleDateString() || 'Just now'}</span>
+                <div class="header-left">
+                    <img src="${post.authorPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'}" class="post-avatar">
+                    <div class="post-meta">
+                        <h4>${post.authorName}</h4>
+                        <div class="meta-bottom">
+                            <span>${post.timestamp?.toDate().toLocaleDateString() || 'Just now'}</span>
+                            ${post.edited ? '<span class="edited-tag">• edited</span>' : ''}
+                        </div>
+                    </div>
                 </div>
+                ${isAuthor ? `
+                <div class="post-actions-wrapper">
+                    <button class="icon-btn post-more-btn">
+                        <span class="material-symbols-rounded">more_horiz</span>
+                    </button>
+                    <div class="post-actions-menu">
+                        <button class="action-item edit-trigger"><span class="material-symbols-rounded">edit</span>Edit</button>
+                        <button class="action-item delete-trigger text-danger"><span class="material-symbols-rounded">delete</span>Delete</button>
+                    </div>
+                </div>
+                ` : ''}
             </div>
             <div class="post-content"><p>${post.text}</p></div>
             <div class="post-interactions" style="z-index: 5;">
@@ -494,15 +567,52 @@ document.addEventListener('DOMContentLoaded', () => {
         // Direct Attachments for Flawless Mobile Touch
         const likeBtn = div.querySelector('.like-btn');
         const commentBtn = div.querySelector('.comment-btn');
+        const moreBtn = div.querySelector('.post-more-btn');
+        const editBtn = div.querySelector('.edit-trigger');
+        const deleteBtn = div.querySelector('.delete-trigger');
 
         const attachTouch = (btn, handler) => {
+            if (!btn) return;
             btn.addEventListener('click', handler);
-            // Fallback for strict mobile views
             btn.addEventListener('touchstart', (e) => {
-                e.preventDefault(); // stop ghost click
+                e.preventDefault();
                 handler(e);
             }, { passive: false });
         };
+
+        // Toggle Actions Menu
+        attachTouch(moreBtn, (e) => {
+            if (e) e.stopPropagation();
+            const menu = div.querySelector('.post-actions-menu');
+            menu?.classList.toggle('active');
+            
+            // Close other menus if open
+            document.querySelectorAll('.post-actions-menu.active').forEach(m => {
+                if (m !== menu) m.classList.remove('active');
+            });
+        });
+
+        // Delete Logic
+        attachTouch(deleteBtn, async (e) => {
+            if (e) e.stopPropagation();
+            if (confirm("Are you sure you want to delete this paradox?")) {
+                try {
+                    await deleteDoc(doc(db, "posts", id));
+                    showToast("Paradox Deleted");
+                    div.remove();
+                } catch (err) {
+                    console.error(err);
+                    showToast("Failed to delete post.");
+                }
+            }
+        });
+
+        // Edit Logic
+        attachTouch(editBtn, (e) => {
+            if (e) e.stopPropagation();
+            openEditPostDrawer(id, post.text);
+            div.querySelector('.post-actions-menu').classList.remove('active');
+        });
 
         attachTouch(likeBtn, async (e) => {
             if (e) e.stopPropagation();
@@ -593,6 +703,54 @@ document.addEventListener('DOMContentLoaded', () => {
         container?.appendChild(toast);
         setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
     }
+
+    // ==========================================
+    // Post Editing System
+    // ==========================================
+    let activeEditPostId = null;
+
+    function openEditPostDrawer(postId, currentText) {
+        activeEditPostId = postId;
+        const input = document.getElementById('edit-post-input');
+        if (input) {
+            input.value = currentText;
+            document.getElementById('edit-post-drawer').classList.add('open');
+            input.focus();
+        }
+    }
+
+    document.getElementById('update-post-btn')?.addEventListener('click', async () => {
+        const text = document.getElementById('edit-post-input').value.trim();
+        if (!text || !activeEditPostId) return;
+
+        const btn = document.getElementById('update-post-btn');
+        btn.textContent = "UPDATING...";
+        btn.disabled = true;
+
+        try {
+            await updateDoc(doc(db, "posts", activeEditPostId), {
+                text: text,
+                edited: true,
+                editedAt: serverTimestamp()
+            });
+            showToast("Paradox Updated");
+            document.getElementById('edit-post-drawer').classList.remove('open');
+            window.refreshMainFeed(); // Refresh to show changes
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to update post.");
+        } finally {
+            btn.textContent = "UPDATE";
+            btn.disabled = false;
+        }
+    });
+
+    // Close options menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.post-actions-wrapper')) {
+            document.querySelectorAll('.post-actions-menu.active').forEach(m => m.classList.remove('active'));
+        }
+    });
 
     initDates();
 });

@@ -347,10 +347,10 @@
 
                     <div class="input-group">
                         <label>Display Name</label>
-                        <input type="text" value="Elias Thorne" class="text-input">
+                        <input type="text" id="diary-name-input" placeholder="Enter name" class="text-input">
                     </div>
 
-                    <button class="action-btn-large primary-btn">Save Changes</button>
+                    <button class="action-btn-large primary-btn" id="save-profile-btn">Save Changes</button>
                 </div>
 
                 <div class="verification-section">
@@ -490,12 +490,10 @@
                 <div style="width:24px"></div>
             </div>
             <div class="drawer-content">
-                <div class="compact-post-list">
-                    <div class="compact-card">
-                        <div class="compact-info">
-                            <p>Just joined the 3h Screen Time challenge! Let's go.</p>
-                            <span>Posted 1h ago • Community</span>
-                        </div>
+                <div class="feed" id="my-dox-list">
+                    <div class="empty-state-mini">
+                        <span class="material-symbols-rounded">history_edu</span>
+                        <p>Loading your paradoxes...</p>
                     </div>
                 </div>
             </div>
@@ -605,6 +603,27 @@
                         </button>
                     </div>
 
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Post Drawer -->
+        <div class="drawer drawer-secondary" id="edit-post-drawer">
+            <div class="drawer-header">
+                <button class="icon-btn" id="close-edit-post-btn">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+                <h2>Edit Paradox</h2>
+                <button class="icon-btn" id="update-post-btn" style="color: var(--brand-blue); font-weight: 700;">UPDATE</button>
+            </div>
+            <div class="drawer-content">
+                <div class="compose-area">
+                    <textarea id="edit-post-input" placeholder="Modify your paradox..." class="compose-input"></textarea>
+                    
+                    <div class="compose-toolbar">
+                        <button class="toolbar-btn"><span class="material-symbols-rounded">image</span></button>
+                        <button class="toolbar-btn"><span class="material-symbols-rounded">alternate_email</span></button>
+                    </div>
                 </div>
             </div>
         </div>
