@@ -29,7 +29,7 @@
     --radius-lg: 28px;
     --radius-full: 999px;
     
-    --layout-max-width: 1200px; /* Restored for full Bento grid */
+    --layout-max-width: 390px; /* Mobile-first phone frame */
     --shadow-soft: 0 4px 20px rgba(0,0,0,0.04);
     --shadow-nav: 0 10px 40px rgba(0,0,0,0.1);
 }
@@ -37,18 +37,20 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    background-color: var(--bg-base);
+    background-color: #1a1b20; /* Dark desktop backdrop */
     font-family: var(--font-family);
     color: var(--text-primary);
     min-height: 100vh;
-    overflow: hidden; /* Prevent page-level scroll */
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     -webkit-font-smoothing: antialiased;
 }
 
 .app-container {
     width: 100%;
     max-width: var(--layout-max-width);
-    margin: 0 auto;
     height: 100vh;
     background-color: var(--bg-base);
     position: relative;
@@ -57,10 +59,14 @@ body {
     flex-direction: column;
 }
 
-/* Responsive adjustments for large screens */
-@media (min-width: 1200px) {
+/* Desktop: show as a premium phone card */
+@media (min-width: 430px) {
     .app-container {
-        padding: 0 40px;
+        height: 92vh;
+        max-height: 860px;
+        border-radius: 40px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5),
+                    0 0 0 1px rgba(255,255,255,0.06);
     }
 }
 
@@ -71,7 +77,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px 24px 16px;
+    padding: 16px 20px 12px;
     background: var(--bg-base);
     z-index: 10;
 }
@@ -120,8 +126,8 @@ body {
 .bento-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 32px;
+    gap: 12px;
+    margin-bottom: 24px;
 }
 
 .bento-item {
@@ -349,7 +355,7 @@ body {
    ========================================= */
 .floating-nav {
     position: fixed;
-    bottom: 24px;
+    bottom: 36px;
     left: 50%;
     transform: translateX(-50%);
     background: #000;
@@ -723,7 +729,10 @@ input:checked + .slider:before {
     flex: 1;
     overflow-y: auto;
     position: relative;
+    scrollbar-width: none; /* Firefox */
 }
+
+.view-container::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
 .app-view {
     display: none;
@@ -972,6 +981,10 @@ input:checked + .slider:before {
 .create-card h3 { font-size: 16px; font-weight: 600; }
 .create-card p { font-size: 13px; color: var(--text-secondary); }
 
+.create-card.active-filter {
+    background: white;
+    border: 2px solid var(--accent-primary);
+}
 /* =========================================
    COMMUNITY REDESIGN (Sub-tabs & Challenges)
    ========================================= */

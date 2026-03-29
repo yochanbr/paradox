@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wireDrawer('open-notifications-btn', 'notification-drawer', 'close-notifications-btn');
     wireDrawer('open-saved-dox-btn', 'saved-dox-drawer', 'close-saved-dox-btn');
     wireDrawer('open-my-public-dox-btn', 'my-public-dox-drawer', 'close-my-public-dox-btn');
+    wireDrawer('open-feed-filter-btn', 'feed-filter-drawer', 'close-feed-filter-btn');
 
     // Composer Triggers
     const composers = [
@@ -137,24 +138,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     
     // Load Posts
+    let currentFeedFilter = 'global';
+
     function initRealtimeFeed() {
         const feedContainer = document.getElementById('home-feed');
         if (!feedContainer) return;
         const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
 
         onSnapshot(q, (snapshot) => {
-            if (snapshot.empty) {
-                feedContainer.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">auto_stories</span><p>Feed is empty.</p></div>`;
-                return;
-            }
             feedContainer.innerHTML = '';
+            let hasPosts = false;
             snapshot.forEach((doc) => {
                 const post = doc.data();
+                
+                // Client-side filtering to avoid complex composite indexing on Firebase setup
+                if (currentFeedFilter === 'mine' && post.authorId !== auth?.currentUser?.uid) return;
+
+                hasPosts = true;
                 const postEl = createPostElement(doc.id, post);
                 feedContainer.appendChild(postEl);
             });
+            
+            if (!hasPosts) {
+                feedContainer.innerHTML = `<div class="empty-state"><span class="material-symbols-rounded">auto_stories</span><p>No dox found for this filter.</p></div>`;
+            }
         });
     }
+
+    const filterOptions = document.querySelectorAll('.filter-opt');
+    filterOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+            filterOptions.forEach(o => o.classList.remove('active-filter'));
+            opt.classList.add('active-filter');
+            currentFeedFilter = opt.dataset.filter;
+            document.querySelector('.section-title h2').textContent = currentFeedFilter === 'mine' ? 'My Dox' : 'Daily Dox';
+            document.getElementById('feed-filter-drawer')?.classList.remove('open');
+            initRealtimeFeed(); // Reload feed with new filter
+        });
+    });
 
     // Load Challenges (Real-time from Admin)
     function initRealtimeChallenges() {

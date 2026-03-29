@@ -72,7 +72,7 @@
                 </section>
                 <div class="section-title">
                     <h2>Daily Dox</h2>
-                    <button class="filter-btn"><span class="material-symbols-rounded">tune</span></button>
+                    <button class="filter-btn" id="open-feed-filter-btn"><span class="material-symbols-rounded">tune</span></button>
                 </div>
 
                 <!-- NEW: Home Composer Bar -->
@@ -645,6 +645,31 @@
                     <div class="empty-state-mini">
                         <span class="material-symbols-rounded">notifications_off</span>
                         <p>No new updates.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feed Filter Drawer -->
+        <div class="drawer drawer-secondary" id="feed-filter-drawer">
+            <div class="drawer-header">
+                <button class="icon-btn" id="close-feed-filter-btn">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+                <h2>Feed Filter</h2>
+                <div style="width:24px"></div>
+            </div>
+            <div class="drawer-content">
+                <div class="create-options-grid">
+                    <div class="create-card active-filter filter-opt" data-filter="global">
+                        <span class="material-symbols-rounded">public</span>
+                        <h3>Global Dox</h3>
+                        <p>See all paradoxes from everyone</p>
+                    </div>
+                    <div class="create-card filter-opt" data-filter="mine">
+                        <span class="material-symbols-rounded">person</span>
+                        <h3>My Dox</h3>
+                        <p>View only your own posts</p>
                     </div>
                 </div>
             </div>

@@ -11,7 +11,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/fi
 document.addEventListener('DOMContentLoaded', () => {
     
     // 0. LOCAL DEVELOPMENT MODE TOGGLE
-    const LOCAL_DEV_MODE = false; // Set to 'false' before pushing to production
+    const LOCAL_DEV_MODE = false; // Set to 'true' for local testing, 'false' for production
 
     // 1. Security Gate: Only Admin 'yochanbr@gmail.com' can stay
     onAuthStateChanged(auth, (user) => {
