@@ -1659,6 +1659,12 @@ input:checked + .slider:before {
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent; /* Android Fix */
+    touch-action: manipulation; /* Instant Tap */
+}
+
+.pill-opt:active {
+    transform: scale(0.96);
 }
 
 .pill-opt.active {
@@ -1693,6 +1699,12 @@ input:checked + .slider:before {
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent; /* Android Fix */
+    touch-action: manipulation; /* Instant Tap */
+}
+
+.day-chip:active {
+    transform: scale(0.9);
 }
 
 .day-chip.active {
