@@ -595,6 +595,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     commentsCount: increment(1)
                 });
                 
+                // Reward Commenter (Engagement)
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                await updateDoc(userRef, { shards: increment(20) });
+                
                 // Notify Author
                 notifyUser(activeCommentPostAuthor, "New Insight! 💬", `${auth.currentUser.displayName} added to your paradox.`, activeCommentPostId);
                 
@@ -944,6 +948,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fire notification if it's a fresh like
             if (!isLiked) {
                 notifyUser(post.authorId, "New Like! ❤️", `${auth.currentUser.displayName} liked your paradox.`, id);
+                // Reward for receiving a like
+                const authorRef = doc(db, "users", post.authorId);
+                await updateDoc(authorRef, { shards: increment(10) });
             }
         });
 
@@ -971,7 +978,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 likes: 0,
                 timestamp: serverTimestamp()
             });
-            showToast("Paradox Shared");
+
+            // Reward Poster (Sharing Wisdom)
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userRef, { shards: increment(100) });
+
+            showToast("Paradox Shared! +100 Shards");
             
             // Trigger Global Broadcast
             notifyUser('all', "New Paradox! 🚀", `${auth.currentUser.displayName} shared a new reflection.`);
@@ -1070,6 +1082,47 @@ document.addEventListener('DOMContentLoaded', () => {
     initDateScroller(); // Launch the dynamic date scroller
     initGoalComposerListeners(); // Mobilize the intention form
 });
+
+// ==========================================
+// 10. REAL-TIME USER STATS PULSE
+// ==========================================
+function loadUserStats(uid) {
+    if (!uid) return;
+
+    const userRef = doc(db, "users", uid);
+    onSnapshot(userRef, (snapshot) => {
+        if (!snapshot.exists()) return;
+        const data = snapshot.data();
+
+        // 1. Shards
+        const shardElements = [document.getElementById('stat-shards'), document.getElementById('stat-total-shards')];
+        shardElements.forEach(el => { if(el) el.textContent = data.shards?.toLocaleString() || '0'; });
+
+        // 2. Level Calculation (Level = sqrt(shards/200) + 1)
+        const shards = data.shards || 0;
+        const level = Math.floor(Math.sqrt(shards / 200)) + 1;
+        const levelElements = [document.getElementById('stat-level')];
+        levelElements.forEach(el => { if(el) el.textContent = level; });
+
+        // 3. Streak
+        const streak = data.streak || 0;
+        const streakHomeVal = document.getElementById('stat-streak-home');
+        const streakProfileVal = document.getElementById('stat-streak');
+        if (streakHomeVal) streakHomeVal.textContent = streak;
+        if (streakProfileVal) streakProfileVal.textContent = streak;
+
+        // 4. Streak Bars Dashboard
+        const bars = document.querySelectorAll('#streak-bars-container .bar');
+        const activeBars = streak % 8; // Reset cycle after a full week (including 0)
+        bars.forEach((bar, index) => {
+            if (index < activeBars) {
+                bar.classList.add('active');
+            } else {
+                bar.classList.remove('active');
+            }
+        });
+    });
+}
 
 // ==========================================
 // 8. DYNAMIC DATE SCROLLER ENGINE

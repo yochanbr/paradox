@@ -184,16 +184,45 @@ async function syncUserProfile(user) {
             displayName: defaultName,
             photoURL: defaultPhoto,
             email: user.email,
-            shards: 0,
+            shards: 50, // Initial gift
             level: 1,
-            streak: 0,
+            streak: 1,
             joinedAt: serverTimestamp(),
-            lastLogin: serverTimestamp()
+            lastLogin: serverTimestamp(),
+            viewedMessages: []
         });
     } else {
+        const userData = userSnap.data();
+        const now = new Date();
+        const lastLogin = userData.lastLogin?.toDate();
+        
+        let newStreak = userData.streak || 0;
+        let newShards = userData.shards || 0;
+        
+        if (lastLogin) {
+            const diffTime = now.getTime() - lastLogin.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) {
+                // Consecutive day!
+                newStreak += 1;
+                newShards += 50; // Daily reward
+            } else if (diffDays > 1) {
+                // Missed a day
+                newStreak = 1;
+                newShards += 50; // Still get the reward for coming back
+            }
+            // If diffDays is 0, they already logged in today, no reward/streak change
+        } else {
+            newStreak = 1;
+            newShards += 50;
+        }
+
         // Update returning user
         await setDoc(userRef, {
-            lastLogin: serverTimestamp()
+            lastLogin: serverTimestamp(),
+            streak: newStreak,
+            shards: newShards
         }, { merge: true });
     }
 }
