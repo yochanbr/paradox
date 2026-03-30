@@ -211,11 +211,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const openDiaryBtn = document.getElementById('open-diary-btn');
     const editNameInput = document.getElementById('edit-display-name');
     const saveProfileBtn = document.getElementById('save-profile-btn');
+    const avatarGrid = document.getElementById('avatar-selection-grid');
+    const diaryPfpPreview = document.getElementById('diary-pfp');
+    let selectedAvatarUrl = null;
 
     openDiaryBtn?.addEventListener('click', () => {
         if (auth.currentUser && editNameInput) {
             editNameInput.value = auth.currentUser.displayName || "";
+            if (diaryPfpPreview) diaryPfpPreview.src = auth.currentUser.photoURL || "";
+            selectedAvatarUrl = auth.currentUser.photoURL || null;
+            
+            // Pre-select current avatar in grid
+            avatarGrid?.querySelectorAll('.avatar-item').forEach(item => {
+                item.classList.toggle('selected', item.getAttribute('data-url') === selectedAvatarUrl);
+            });
         }
+    });
+
+    avatarGrid?.querySelectorAll('.avatar-item').forEach(item => {
+        item.addEventListener('click', () => {
+            avatarGrid.querySelectorAll('.avatar-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedAvatarUrl = item.getAttribute('data-url');
+            if (diaryPfpPreview) diaryPfpPreview.src = selectedAvatarUrl;
+        });
     });
 
     saveProfileBtn?.addEventListener('click', async () => {
@@ -229,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saveProfileBtn.disabled = true;
             saveProfileBtn.textContent = "Saving...";
             
-            await updateUserProfile(newName);
+            await updateUserProfile(newName, selectedAvatarUrl);
             showToast("Identity updated.");
             
             // Sync current drawer UI immediately
