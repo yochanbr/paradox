@@ -134,6 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (profileAvatar) profileAvatar.src = photoToDisplay;
             if (headerAvatar) headerAvatar.src = photoToDisplay;
 
+            // Sync Composer Avatars
+            const homeComposerAvatar = document.getElementById('home-composer-avatar');
+            const commenterAvatar = document.getElementById('commenter-avatar');
+            if (homeComposerAvatar) homeComposerAvatar.src = photoToDisplay;
+            if (commenterAvatar) commenterAvatar.src = photoToDisplay;
+
             // Load App Data
             loadUserStats(user.uid);
             loadFeed();
