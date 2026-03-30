@@ -5,7 +5,8 @@
 
 import { 
     auth, signOutUser, onAuthStateChanged, isUserAdmin, 
-    signInUser, registerUser, sendRecoveryEmail 
+    signInUser, registerUser, sendRecoveryEmail,
+    updateUserProfile
 } from "./auth.js";
 import { db } from "./firebase-config.js";
 import { 
