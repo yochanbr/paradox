@@ -446,17 +446,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4.5 NOTIFICATIONS & COMMENTS LOGIC
     // ==========================================
     
-    async function notifyUser(recipientId, message) {
-        if (!recipientId || recipientId === auth.currentUser?.uid) return;
+    async function notifyUser(recipientId, title, body, postId = null) {
+        if (!recipientId || (recipientId !== 'all' && recipientId === auth.currentUser?.uid)) return;
         
         await addDoc(collection(db, "user_notifications"), {
             recipientId: recipientId,
-            senderId: auth.currentUser.uid,
-            senderName: auth.currentUser.displayName,
-            senderPhoto: auth.currentUser.photoURL,
-            message: message,
-            timestamp: serverTimestamp(),
-            read: false
+            senderId: auth.currentUser?.uid || 'system',
+            senderName: auth.currentUser?.displayName || 'The Paradox',
+            title: title,
+            body: body,
+            postId: postId,
+            timestamp: serverTimestamp()
         });
     }
 
@@ -584,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 // Notify Author
-                notifyUser(activeCommentPostAuthor, "replied to your paradox.");
+                notifyUser(activeCommentPostAuthor, "New Insight! 💬", `${auth.currentUser.displayName} added to your paradox.`, activeCommentPostId);
                 
                 cInput.value = '';
                 cInput.placeholder = 'Add a comment...';
@@ -908,7 +908,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Fire notification if it's a fresh like
             if (!isLiked) {
-                notifyUser(post.authorId, "liked your paradox.");
+                notifyUser(post.authorId, "New Like! ❤️", `${auth.currentUser.displayName} liked your paradox.`, id);
             }
         });
 
@@ -937,6 +937,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 timestamp: serverTimestamp()
             });
             showToast("Paradox Shared");
+            
+            // Trigger Global Broadcast
+            notifyUser('all', "New Paradox! 🚀", `${auth.currentUser.displayName} shared a new reflection.`);
+            
             closeAllDrawers();
             document.querySelector('.compose-input').value = '';
         } catch (e) {
