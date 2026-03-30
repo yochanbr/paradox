@@ -1,11 +1,6 @@
-import { auth, db, storage } from "./firebase-config.js";
-import { 
-    signOut, onAuthStateChanged, updateProfile,
-    signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { 
     doc, getDoc, setDoc, serverTimestamp, updateDoc, 
-    collection, query, where, getDocs, writeBatch 
+    collection, query, where, getDocs, writeBatch, collectionGroup
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
@@ -112,31 +107,46 @@ async function updateUserProfile(newName, newPhotoURL) {
         // 3. BACKGROUND SYNC: Update all existing content by this user
         (async () => {
             try {
-                // Sync Posts
+                const uid = auth.currentUser.uid;
+                const photoToUse = newPhotoURL || auth.currentUser.photoURL;
+
+                // Sync Main Posts
                 const postBatch = writeBatch(db);
                 const postsQuery = query(collection(db, "posts"), where("authorId", "==", uid));
                 const postsSnap = await getDocs(postsQuery);
                 postsSnap.forEach(d => {
-                    postBatch.update(d.ref, {
-                        authorName: newName,
-                        authorPhoto: newPhotoURL || auth.currentUser.photoURL
-                    });
+                    postBatch.update(d.ref, { authorName: newName, authorPhoto: photoToUse });
                 });
                 if (!postsSnap.empty) await postBatch.commit();
 
-                // Sync Notifications (where this user is the sender)
+                // Sync Comments (Across ALL posts using Collection Group)
+                const commentBatch = writeBatch(db);
+                const commentsQuery = query(collectionGroup(db, "comments"), where("authorId", "==", uid));
+                const commentsSnap = await getDocs(commentsQuery);
+                commentsSnap.forEach(d => {
+                    commentBatch.update(d.ref, { authorName: newName, authorPhoto: photoToUse });
+                });
+                if (!commentsSnap.empty) await commentBatch.commit();
+
+                // Sync Notifications (sent by the user)
                 const notifyBatch = writeBatch(db);
-                const notifyQuery = query(collection(db, "user_notifications"), where("senderName", "==", auth.currentUser.displayName)); 
-                // Note: This matches OLD name if we haven't changed senderId strategy yet.
-                // For bulletproof sync, it's better to query by a senderId field.
+                // 1. Try syncing by senderId (new version)
+                const notifyQuery = query(collection(db, "user_notifications"), where("senderId", "==", uid)); 
                 const notifySnap = await getDocs(notifyQuery);
                 notifySnap.forEach(d => {
-                    notifyBatch.update(d.ref, {
-                        senderName: newName,
-                        senderPhoto: newPhotoURL || auth.currentUser.photoURL
-                    });
+                    notifyBatch.update(d.ref, { senderName: newName, senderPhoto: photoToUse });
                 });
-                if (!notifySnap.empty) await notifyBatch.commit();
+                
+                // 2. Fallback: Sync by senderName (legacy version)
+                const legacyNotifyQuery = query(collection(db, "user_notifications"), where("senderName", "==", auth.currentUser.displayName)); 
+                const legacyNotifySnap = await getDocs(legacyNotifyQuery);
+                legacyNotifySnap.forEach(d => {
+                    notifyBatch.update(d.ref, { senderName: newName, senderPhoto: photoToUse });
+                });
+
+                if (!notifySnap.empty || !legacyNotifySnap.empty) {
+                    await notifyBatch.commit();
+                }
 
                 console.log("Background Identity Sync Complete.");
             } catch (syncErr) {

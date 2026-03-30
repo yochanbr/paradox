@@ -435,6 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         await addDoc(collection(db, "user_notifications"), {
             recipientId: recipientId,
+            senderId: auth.currentUser.uid,
             senderName: auth.currentUser.displayName,
             senderPhoto: auth.currentUser.photoURL,
             message: message,
