@@ -1,3 +1,8 @@
+import { auth, db, storage } from "./firebase-config.js";
+import { 
+    signOut, onAuthStateChanged, updateProfile,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { 
     doc, getDoc, setDoc, serverTimestamp, updateDoc, 
     collection, query, where, getDocs, writeBatch, collectionGroup
