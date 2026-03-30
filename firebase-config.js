@@ -8,6 +8,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase
 import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { getMessaging } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -26,10 +27,11 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const messaging = getMessaging(app);
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ 
   prompt: 'select_account' 
 });
 
 // Export for other modules
-export { app, auth, db, storage, provider };
+export { app, auth, db, storage, messaging, provider };

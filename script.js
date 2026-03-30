@@ -8,7 +8,10 @@ import {
     signInUser, registerUser, sendRecoveryEmail,
     updateUserProfile
 } from "./auth.js";
-import { db } from "./firebase-config.js";
+import { db, messaging } from "./firebase-config.js";
+import { 
+    getToken, onMessage 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 import { 
     collection, addDoc, query, orderBy, onSnapshot, 
     serverTimestamp, doc, updateDoc, increment, getDoc,
@@ -138,6 +141,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // Personalize Public Header
             const publicHeader = document.getElementById('public-dox-header');
             if (publicHeader) publicHeader.textContent = `${nameToDisplay}'s Dox`;
+
+            // Push Notification Setup (Request Token)
+            if (auth.currentUser) {
+                requestNotificationPermission(auth.currentUser.uid);
+            }
+
+            // Foreground Message Listener
+            onMessage(messaging, (payload) => {
+                console.log('Message received in foreground: ', payload);
+                if (payload.notification) {
+                    showToast(`${payload.notification.title}: ${payload.notification.body}`);
+                }
+            });
 
             // Sync Composer Avatars
             const homeComposerAvatar = document.getElementById('home-composer-avatar');
@@ -1164,4 +1180,36 @@ function initGoalComposerListeners() {
             saveGoalBtn.textContent = "Set Intention";
         }
     });
+}
+    
+/**
+ * PUSH NOTIFICATION LOGIC
+ */
+async function requestNotificationPermission(uid) {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            console.log('Notification permission granted.');
+            
+            // Get FCM Token
+            const token = await getToken(messaging, { 
+                vapidKey: 'BFjpiwYkRh_L18u6NftJb0aqiqKoaKgeWGiO818CCd4PTSOfmxTtTssxOaD4CfFtUXy5I1L9bEr4nwRUURsXF1A' 
+            });
+
+            if (token) {
+                console.log('FCM Token:', token);
+                const { doc, updateDoc, arrayUnion } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                const userRef = doc(db, "users", uid);
+                await updateDoc(userRef, {
+                    fcmTokens: arrayUnion(token)
+                });
+            } else {
+                console.warn('No registration token available.');
+            }
+        } else {
+            console.warn('Unable to get permission to notify.');
+        }
+    } catch (err) {
+        console.error('An error occurred while retrieving token. ', err);
+    }
 }
