@@ -35,6 +35,10 @@
                     <span class="material-symbols-rounded">group</span>
                     User Hub
                 </button>
+                <button class="nav-btn" data-view="iam">
+                    <span class="material-symbols-rounded">featured_video</span>
+                    In-App Messages
+                </button>
             </nav>
 
             <div class="sidebar-footer">
@@ -115,6 +119,43 @@
                         </button>
                     </div>
 
+                </div>
+            </div>
+
+            <!-- In-App Messaging View -->
+            <div class="admin-view" id="view-iam">
+                <div class="bento-grid">
+                    <div class="bento-item form-module">
+                        <div class="module-header">
+                            <span class="material-symbols-rounded">auto_awesome</span>
+                            <h3>Experience Forge</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="input-grp">
+                                <label>Campaign Title</label>
+                                <input type="text" id="iam-title-input" placeholder="Welcome Stoic!">
+                            </div>
+                            <div class="input-grp">
+                                <label>Image URL (Optional)</label>
+                                <input type="text" id="iam-image-input" placeholder="https://...">
+                            </div>
+                            <div class="input-grp full">
+                                <label>Message Body</label>
+                                <textarea id="iam-body-input" placeholder="What should the user see in the popup?"></textarea>
+                            </div>
+                            <div class="input-grp">
+                                <label>CTA Text</label>
+                                <input type="text" id="iam-cta-text-input" placeholder="Join Now">
+                            </div>
+                            <div class="input-grp">
+                                <label>CTA Link (Optional)</label>
+                                <input type="text" id="iam-cta-url-input" placeholder="index.html#challenges">
+                            </div>
+                        </div>
+                        <button class="admin-action-btn primary" id="push-iam-btn">
+                            Deploy Experience
+                        </button>
+                    </div>
                 </div>
             </div>
 

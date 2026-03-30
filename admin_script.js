@@ -100,6 +100,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // 6. Experience Forge (IAM Deployment)
+    const pushIamBtn = document.getElementById('push-iam-btn');
+    pushIamBtn?.addEventListener('click', async () => {
+        const title = document.getElementById('iam-title-input').value;
+        const body = document.getElementById('iam-body-input').value;
+        const imageUrl = document.getElementById('iam-image-input').value;
+        const ctaText = document.getElementById('iam-cta-text-input').value;
+        const ctaUrl = document.getElementById('iam-cta-url-input').value;
+
+        if (!title || !body) {
+            showAdminToast('Title and Body are required.');
+            return;
+        }
+
+        pushIamBtn.textContent = 'Deploying Experience...';
+        pushIamBtn.disabled = true;
+
+        try {
+            await addDoc(collection(db, "in_app_messages"), {
+                title,
+                body,
+                imageUrl,
+                ctaText: ctaText || "Got it",
+                ctaUrl,
+                active: true,
+                timestamp: serverTimestamp()
+            });
+            showAdminToast(`DEPLOYED: "${title}" is now active for all users.`);
+            resetForm(['iam-title-input', 'iam-body-input', 'iam-image-input', 'iam-cta-text-input', 'iam-cta-url-input']);
+        } catch (e) {
+            showAdminToast('Deployment Error');
+            console.error(e);
+        } finally {
+            pushIamBtn.textContent = 'Deploy Experience';
+            pushIamBtn.disabled = false;
+        }
+    });
+
     // 5. Utilities
     function resetForm(ids) {
         ids.forEach(id => document.getElementById(id).value = '');

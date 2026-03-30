@@ -169,8 +169,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Load App Data
             loadUserStats(user.uid);
             loadFeed();
-            initRealtimeChallenges();
+            // 5. App Initializations
             initRealtimeNotifications();
+            initInAppMessaging(); // Initialize Custom IAM Engine
+            initRealtimeChallenges();
             runNotificationCleanup(user.uid);
 
             // Security: Check for Admin Portal
@@ -1248,6 +1250,88 @@ async function requestNotificationPermission(uid) {
         }
     } catch (err) {
         console.error('An error occurred while retrieving token. ', err);
+    }
+}
+
+// =========================================
+// IN-APP MESSAGING (IAM) ENGINE
+// =========================================
+async function initInAppMessaging() {
+    if (!auth.currentUser) return;
+
+    try {
+        // 1. Get user profile to check viewed messages
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        const viewedMessages = userSnap.data()?.viewedMessages || [];
+
+        // 2. Fetch active in-app messages
+        const q = query(collection(db, "in_app_messages"), where("active", "==", true));
+        const snapshot = await getDocs(q);
+        
+        const campaigns = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // 3. Find first campaign that hasn't been viewed by this user
+        const activeCampaign = campaigns.find(c => !viewedMessages.includes(c.id));
+
+        if (activeCampaign) {
+            renderInAppMessage(activeCampaign);
+        }
+    } catch (err) {
+        console.error("IAM Engine Error:", err);
+    }
+}
+
+function renderInAppMessage(campaign) {
+    const overlay = document.getElementById('in-app-messaging-overlay');
+    const title = document.getElementById('iam-title');
+    const body = document.getElementById('iam-body');
+    const img = document.getElementById('iam-hero-img');
+    const imgContainer = document.getElementById('iam-image-container');
+    const ctaBtn = document.getElementById('iam-cta-btn');
+    const closeBtn = document.getElementById('close-iam-btn');
+
+    if (!overlay || !campaign) return;
+
+    title.textContent = campaign.title;
+    body.textContent = campaign.body;
+    
+    if (campaign.imageUrl) {
+        img.src = campaign.imageUrl;
+        imgContainer.style.display = 'block';
+    } else {
+        imgContainer.style.display = 'none';
+    }
+
+    ctaBtn.textContent = campaign.ctaText || 'Got it';
+    
+    // Set Action
+    ctaBtn.onclick = async () => {
+        if (campaign.ctaUrl) {
+            window.open(campaign.ctaUrl, '_blank');
+        }
+        await dismissIAM(campaign.id);
+    };
+
+    closeBtn.onclick = () => dismissIAM(campaign.id);
+
+    overlay.classList.remove('hidden');
+}
+
+async function dismissIAM(campaignId) {
+    const overlay = document.getElementById('in-app-messaging-overlay');
+    overlay.classList.add('hidden');
+
+    if (!auth.currentUser) return;
+
+    try {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        await updateDoc(userRef, {
+            viewedMessages: arrayUnion(campaignId)
+        });
+        console.log(`Campaign ${campaignId} marked as viewed.`);
+    } catch (err) {
+        console.error("Failed to update viewedMessages:", err);
     }
 }
 
