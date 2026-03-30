@@ -1219,17 +1219,11 @@ async function requestNotificationPermission(uid) {
 }
 
 /**
- * IN-APP UPDATES (Android Bridge)
+ * IN-APP UPDATES (Universal Logic)
  */
 async function checkForUpdates() {
-    // 1. Detect if running inside the Android App
-    if (!window.Android || typeof window.Android.startUpdate !== 'function') {
-        console.log("Not running in Android Bridge. Updates disabled.");
-        return;
-    }
-
     try {
-        // 2. Fetch latest version from Firestore
+        // 1. Fetch latest version from Firestore
         const configRef = doc(db, "app_config", "version");
         const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         const configSnap = await getDoc(configRef);
@@ -1239,7 +1233,7 @@ async function checkForUpdates() {
             const latestVersion = config.latest || 1;
             const updateUrl = config.url;
 
-            // 3. Compare and Trigger UI
+            // 2. Compare and Trigger UI (Works on both Web and Android)
             if (latestVersion > CURRENT_APP_VERSION && updateUrl) {
                 console.log(`Update Found: v${latestVersion}`);
                 const overlay = document.getElementById('update-overlay');
@@ -1251,7 +1245,19 @@ async function checkForUpdates() {
                     confirmBtn.onclick = () => {
                         confirmBtn.disabled = true;
                         confirmBtn.innerHTML = '<span class="material-symbols-rounded">downloading</span> Downloading...';
-                        window.Android.startUpdate(updateUrl);
+                        
+                        // 3. Smart Bridge Fallback
+                        if (window.Android && typeof window.Android.startUpdate === 'function') {
+                            // Use Native Bridge (Android APK)
+                            window.Android.startUpdate(updateUrl);
+                        } else {
+                            // Fallback for Web Users (Direct Link)
+                            window.open(updateUrl, '_blank');
+                            setTimeout(() => {
+                                confirmBtn.disabled = false;
+                                confirmBtn.innerHTML = '<span class="material-symbols-rounded">download_for_offline</span> Update Now';
+                            }, 2000);
+                        }
                     };
                 }
             }
