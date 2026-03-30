@@ -87,7 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
             await addDoc(collection(db, "notifications"), {
                 message: msg,
                 type: 'admin',
-                timestamp: serverTimestamp()
+                timestamp: serverTimestamp(),
+                status: 'unread'
             });
             showAdminToast('BROADCAST: Notification sent successfully.');
             resetForm(['broadcast-msg']);

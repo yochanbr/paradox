@@ -451,28 +451,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4.5 NOTIFICATIONS & COMMENTS LOGIC
     // ==========================================
     
+    /**
+     * Notify User via Firestore (Triggers FCM via Cloud Function or App Listener)
+     */
     async function notifyUser(recipientId, title, body, postId = null) {
         if (!recipientId || (recipientId !== 'all' && recipientId === auth.currentUser?.uid)) return;
         
-        // Path B: Direct Native Firestore Sync
         await addDoc(collection(db, "user_notifications"), {
             recipientId: recipientId,
             senderId: auth.currentUser?.uid || 'system',
             senderName: auth.currentUser?.displayName || 'The Paradox',
+            senderPhoto: auth.currentUser?.photoURL || null,
             title: title,
             body: body,
             postId: postId,
-            timestamp: serverTimestamp()
-        });
-
-        // Path A: Cloud Notification Trigger (Redundancy)
-        await addDoc(collection(db, "pending_notifications"), {
-            recipientId: recipientId,
-            title: title,
-            body: body,
-            postId: postId,
-            type: "interaction",
-            timestamp: serverTimestamp()
+            timestamp: serverTimestamp(),
+            status: 'unread'
         });
     }
 
