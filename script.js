@@ -237,7 +237,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             document.getElementById('diary-drawer')?.classList.remove('open');
         } catch (err) {
-            showToast("Failed to update Identity.");
+            console.error("Identity Update Fail:", err);
+            showToast(err.message || "Failed to update Identity.");
         } finally {
             saveProfileBtn.disabled = false;
             saveProfileBtn.innerHTML = `<span class="material-symbols-rounded">save</span> Save Identity`;

@@ -101,9 +101,9 @@ async function updateUserProfile(newName, newPhotoURL) {
         // 1. Update Firebase Auth Profile
         await updateProfile(auth.currentUser, updates);
 
-        // 2. Update Firestore User Document
+        // 2. Update Firestore User Document (use setDoc + merge for reliability)
         const userRef = doc(db, "users", auth.currentUser.uid);
-        await updateDoc(userRef, updates);
+        await setDoc(userRef, updates, { merge: true });
 
         console.log("Profile updated successfully");
         return true;
