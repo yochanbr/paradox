@@ -114,20 +114,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (LOCAL_DEV_MODE) {
             console.warn("DEV MODE ACTIVE: Bypassing auth check.");
             loginOverlay?.classList.add('hidden');
+            return;
         }
 
         if (user) {
-            console.log("Welcome,", user.displayName);
-            if (!LOCAL_DEV_MODE) loginOverlay?.classList.add('hidden');
+            console.log("Identity Verified:", user.email);
+            loginOverlay?.classList.add('hidden');
             document.body.style.overflow = 'auto';
             
-            // Sync UI with Profile
+            // Sync UI with Profile (with fallback for very new users)
             const profileName = document.querySelector('.hero-name');
             const profileAvatar = document.querySelector('.hero-avatar');
             const headerAvatar = document.querySelector('.user-chip img');
-            if (profileName) profileName.textContent = user.displayName;
-            if (profileAvatar) profileAvatar.src = user.photoURL;
-            if (headerAvatar) headerAvatar.src = user.photoURL;
+            
+            const nameToDisplay = user.displayName || user.email.split('@')[0];
+            const photoToDisplay = user.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${nameToDisplay}`;
+
+            if (profileName) profileName.textContent = nameToDisplay;
+            if (profileAvatar) profileAvatar.src = photoToDisplay;
+            if (headerAvatar) headerAvatar.src = photoToDisplay;
 
             // Load App Data
             loadUserStats(user.uid);
@@ -142,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 adminPortalLink.style.display = isUserAdmin(user) ? 'flex' : 'none';
             }
         } else {
-            if (!LOCAL_DEV_MODE) loginOverlay?.classList.remove('hidden');
+            loginOverlay?.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
     });

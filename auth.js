@@ -15,7 +15,17 @@ async function registerUser(email, password) {
     try {
         const result = await createUserWithEmailAndPassword(auth, email, password);
         const user = result.user;
+        
+        // 1. Immediately update the Auth Profile for the observer
+        const defaultName = email.split('@')[0];
+        await updateProfile(user, {
+            displayName: defaultName,
+            photoURL: `https://api.dicebear.com/7.x/initials/svg?seed=${defaultName}`
+        });
+
+        // 2. Sync to Firestore
         await syncUserProfile(user);
+        
         return user;
     } catch (error) {
         console.error("Registration Error:", error);
