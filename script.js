@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 0. LOCAL DEVELOPMENT MODE TOGGLE
     // ==========================================
     const LOCAL_DEV_MODE = false; // Set to 'true' for local testing, 'false' for production
+    const CURRENT_APP_VERSION = 1; // Current version of the Android App (Build 1)
 
     // ==========================================
     // 1. IDENTITY & LOGIN RITUAL
@@ -167,6 +168,9 @@ document.addEventListener('DOMContentLoaded', () => {
             initRealtimeChallenges();
             initRealtimeNotifications();
             runNotificationCleanup(user.uid);
+
+            // In-App Update Check (Android WebView only)
+            checkForUpdates();
 
             // Security: Check for Admin Portal
             const adminPortalLink = document.querySelector('a[href="admin.html"]')?.parentElement;
@@ -1211,5 +1215,48 @@ async function requestNotificationPermission(uid) {
         }
     } catch (err) {
         console.error('An error occurred while retrieving token. ', err);
+    }
+}
+
+/**
+ * IN-APP UPDATES (Android Bridge)
+ */
+async function checkForUpdates() {
+    // 1. Detect if running inside the Android App
+    if (!window.Android || typeof window.Android.startUpdate !== 'function') {
+        console.log("Not running in Android Bridge. Updates disabled.");
+        return;
+    }
+
+    try {
+        // 2. Fetch latest version from Firestore
+        const configRef = doc(db, "app_config", "version");
+        const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const configSnap = await getDoc(configRef);
+
+        if (configSnap.exists()) {
+            const config = configSnap.data();
+            const latestVersion = config.latest || 1;
+            const updateUrl = config.url;
+
+            // 3. Compare and Trigger UI
+            if (latestVersion > CURRENT_APP_VERSION && updateUrl) {
+                console.log(`Update Found: v${latestVersion}`);
+                const overlay = document.getElementById('update-overlay');
+                const confirmBtn = document.getElementById('confirm-update-btn');
+
+                if (overlay) overlay.classList.add('open');
+
+                if (confirmBtn) {
+                    confirmBtn.onclick = () => {
+                        confirmBtn.disabled = true;
+                        confirmBtn.innerHTML = '<span class="material-symbols-rounded">downloading</span> Downloading...';
+                        window.Android.startUpdate(updateUrl);
+                    };
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Update Check Failed:", err);
     }
 }
