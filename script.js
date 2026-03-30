@@ -694,20 +694,28 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (allNotifs.length === 0) {
-                notiContainer.innerHTML = `<div class="empty-notif"><span class="material-symbols-rounded">notifications_off</span><p>No new updates.</p></div>`;
-                if(badge) badge.style.display = 'none';
+                notiContainer.innerHTML = `<div class="empty-notif"><span class="material-symbols-rounded">notifications_off</span><p>Your Inbox is Clear</p></div>`;
+                if(badge) {
+                    badge.style.display = 'none';
+                    badge.textContent = '0';
+                }
                 return;
             }
 
             notiContainer.innerHTML = '';
             allNotifs.forEach(n => {
                 const item = document.createElement('div');
-                item.className = 'notification-item';
+                item.className = 'notification-item unread'; // Always unread in this filtered list
+                item.style.cursor = 'pointer';
+                
+                // Clicking a notification marks it as read and clears it from list
+                item.addEventListener('click', () => markAsRead(n.id, n.type));
+
                 if (n.type === 'admin') {
                     item.innerHTML = `
                         <div class="noti-icon"><span class="material-symbols-rounded">campaign</span></div>
                         <div class="noti-body">
-                            <h4>Admin Broadcast</h4>
+                            <h4>Admin Broadcast <span class="unread-dot"></span></h4>
                             <p>${n.message}</p>
                         </div>
                     `;
@@ -715,7 +723,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.innerHTML = `
                         <img src="${n.senderPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
                         <div class="noti-body">
-                            <h4>${n.senderName} <span>${n.message}</span></h4>
+                            <h4>${n.senderName} <span class="unread-dot"></span></h4>
+                            <p>${n.body}</p>
                             <p style="font-size:11px;color:var(--text-muted);margin-top:2px;">${n.timestamp?.toDate().toLocaleTimeString() || 'Just now'}</p>
                         </div>
                     `;
@@ -728,8 +737,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 1. Admin Broadcasts
-        const qAdmin = query(collection(db, "notifications"), orderBy("timestamp", "desc"));
+        // 1. Admin Broadcasts (Only Unread)
+        const qAdmin = query(collection(db, "notifications"), where("status", "==", "unread"), orderBy("timestamp", "desc"));
         onSnapshot(qAdmin, (snapshot) => {
             adminNotifs = snapshot.docs.map(doc => ({ ...doc.data(), type: 'admin' }));
             renderNotifs();
@@ -737,12 +746,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. User specific notifications
         if (auth.currentUser) {
-            // No orderBy mapping to avoid complex index requirements at this stage. We sort client-side.
-            const qUser = query(collection(db, "user_notifications"), where("recipientId", "==", auth.currentUser.uid));
+            const qUser = query(collection(db, "user_notifications"), 
+                where("recipientId", "==", auth.currentUser.uid),
+                where("status", "==", "unread") // Only show unread
+            );
             onSnapshot(qUser, (snapshot) => {
                 userNotifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'user' }));
                 renderNotifs();
             });
+        }
+    }
+
+    // Mark single notification as read
+    async function markAsRead(id, type) {
+        if (!auth.currentUser) return;
+        try {
+            const coll = type === 'admin' ? "notifications" : "user_notifications";
+            await updateDoc(doc(db, coll, id), { status: 'read' });
+            showToast("Activity cleared.");
+        } catch (err) {
+            console.error("Failed to mark as read:", err);
         }
     }
 
