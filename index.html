@@ -344,11 +344,19 @@
 
             <div class="drawer-content">
                 <div class="edit-profile-section" style="text-align: center; padding: 20px 0;">
-                    <img src="" id="diary-pfp" alt="Profile Avatar" class="hero-avatar"
-                        style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; background: var(--bg-secondary);">
-                    <h3 id="diary-name" style="margin-bottom: 8px;">Stoic Identity</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary);">Profile customization is currently
-                        disabled in Beta.</p>
+                    <div class="diary-avatar-wrapper" style="position: relative; display: inline-block;">
+                        <img src="" id="diary-pfp" alt="Profile Avatar" class="hero-avatar"
+                            style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; background: var(--bg-secondary);">
+                    </div>
+                    
+                    <div class="auth-form-group" style="padding: 0 20px; text-align: left;">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 4px;">Stoic Identity Key</label>
+                        <input type="text" id="edit-display-name" class="auth-input" placeholder="Enter new name...">
+                        <button id="save-profile-btn" class="action-btn-large" style="margin-top: 16px;">
+                            <span class="material-symbols-rounded">save</span>
+                            Save Identity
+                        </button>
+                    </div>
                 </div>
 
                 <div class="verification-section">

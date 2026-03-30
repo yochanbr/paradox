@@ -206,6 +206,44 @@ document.addEventListener('DOMContentLoaded', () => {
     wireDrawer('close-edit-post-btn', 'edit-post-drawer', 'close-edit-post-btn');
     wireDrawer('open-notifications-btn', 'notification-drawer', 'close-notifications-btn');
 
+    // Profile Edit Logic (Diary)
+    const openDiaryBtn = document.getElementById('open-diary-btn');
+    const editNameInput = document.getElementById('edit-display-name');
+    const saveProfileBtn = document.getElementById('save-profile-btn');
+
+    openDiaryBtn?.addEventListener('click', () => {
+        if (auth.currentUser && editNameInput) {
+            editNameInput.value = auth.currentUser.displayName || "";
+        }
+    });
+
+    saveProfileBtn?.addEventListener('click', async () => {
+        const newName = editNameInput.value.trim();
+        if (!newName) {
+            showToast("Identity Key cannot be empty.");
+            return;
+        }
+
+        try {
+            saveProfileBtn.disabled = true;
+            saveProfileBtn.textContent = "Saving...";
+            
+            await updateUserProfile(newName);
+            showToast("Identity updated.");
+            
+            // Sync current drawer UI immediately
+            const diaryName = document.getElementById('diary-name');
+            if (diaryName) diaryName.textContent = newName;
+            
+            document.getElementById('diary-drawer')?.classList.remove('open');
+        } catch (err) {
+            showToast("Failed to update Identity.");
+        } finally {
+            saveProfileBtn.disabled = false;
+            saveProfileBtn.innerHTML = `<span class="material-symbols-rounded">save</span> Save Identity`;
+        }
+    });
+
     // Composer Triggers
     const composers = [
         { triggers: ['open-status-btn', 'open-compose-btn'], drawer: 'compose-post-drawer', close: 'close-compose-btn' },
