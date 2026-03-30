@@ -173,6 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initRealtimeNotifications();
             initInAppMessaging(); // Initialize Custom IAM Engine
             initRealtimeChallenges();
+            loadUserGoals(user.uid); // Initialize Goal Engine
             runNotificationCleanup(user.uid);
 
             // Security: Check for Admin Portal
@@ -1122,6 +1123,137 @@ function loadUserStats(uid) {
             }
         });
     });
+}
+
+// ==========================================
+// 11. GOAL & PROGRESS ENGINE
+// ==========================================
+let goalsUnsubscribe = null;
+
+function loadUserGoals(uid) {
+    if (!uid) return;
+    const goalsList = document.getElementById('active-goals-list');
+    if (!goalsList) return;
+
+    if (goalsUnsubscribe) goalsUnsubscribe();
+
+    const q = query(collection(db, "goals"), where("uid", "==", uid), orderBy("createdAt", "desc"));
+    goalsUnsubscribe = onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) {
+            goalsList.innerHTML = `
+                <div class="empty-state">
+                    <span class="material-symbols-rounded">target</span>
+                    <p>No active intentions.</p>
+                    <span>Tap the + to set your first goal.</span>
+                </div>`;
+            updateWeeklyProgressDisplay(0, 0);
+            return;
+        }
+
+        renderGoalList(snapshot.docs);
+        calculateWeeklyProgress(snapshot.docs);
+    });
+}
+
+function renderGoalList(docs) {
+    const goalsList = document.getElementById('active-goals-list');
+    goalsList.innerHTML = '';
+
+    docs.forEach(docSnap => {
+        const goal = { id: docSnap.id, ...docSnap.data() };
+        const isCompleted = goal.status === 'completed';
+        const date = goal.createdAt?.toDate() ? goal.createdAt.toDate().toLocaleDateString() : 'Today';
+
+        const div = document.createElement('div');
+        div.className = `goal-item ${isCompleted ? 'completed' : ''}`;
+        div.innerHTML = `
+            <div class="goal-item-left">
+                <div class="goal-check-btn ${isCompleted ? 'active' : ''}" onclick="window.toggleGoal('${goal.id}', '${goal.status}')">
+                    <span class="material-symbols-rounded" style="font-size:18px">${isCompleted ? 'check' : ''}</span>
+                </div>
+                <div class="goal-info">
+                    <span class="goal-title">${goal.text}</span>
+                    <span class="goal-meta">${date} • ${goal.timeType}</span>
+                </div>
+            </div>
+            <div class="goal-actions">
+                <button class="goal-action-btn delete" onclick="window.deleteGoal('${goal.id}')">
+                    <span class="material-symbols-rounded" style="font-size:20px">delete</span>
+                </button>
+            </div>
+        `;
+        goalsList.appendChild(div);
+    });
+
+    // 2. Sync Dashboard "Focus" Widget with latest active goal
+    const activeGoals = docs.filter(d => d.data().status === 'active');
+    const dashboardGoalText = document.querySelector('.streak-widget').parentElement.querySelector('.goal-text');
+    if (dashboardGoalText) {
+        if (activeGoals.length > 0) {
+            dashboardGoalText.textContent = activeGoals[0].data().text;
+            dashboardGoalText.classList.remove('placeholder');
+        } else {
+            dashboardGoalText.textContent = "Tap to set today's intention.";
+            dashboardGoalText.classList.add('placeholder');
+        }
+    }
+}
+
+// Global scope expose for onclick
+window.toggleGoal = async (id, status) => {
+    const newStatus = status === 'active' ? 'completed' : 'active';
+    const goalRef = doc(db, "goals", id);
+    
+    try {
+        await updateDoc(goalRef, { status: newStatus });
+        if (newStatus === 'completed') {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userRef, { shards: increment(200) });
+            showToast("Focus Accomplished! +200 Shards");
+        }
+    } catch (err) {
+        console.error("Goal Toggle Error:", err);
+    }
+};
+
+window.deleteGoal = async (id) => {
+    if (!confirm("Are you sure you want to remove this intention?")) return;
+    try {
+        await deleteDoc(doc(db, "goals", id));
+        showToast("Intention Removed.");
+    } catch (err) {
+        console.error("Delete Goal Error:", err);
+    }
+};
+
+function calculateWeeklyProgress(docs) {
+    const now = new Date();
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const weeklyGoals = docs.filter(d => {
+        const date = d.data().createdAt?.toDate();
+        return date && date >= startOfWeek;
+    });
+
+    const completed = weeklyGoals.filter(d => d.data().status === 'completed').length;
+    const total = weeklyGoals.length;
+
+    updateWeeklyProgressDisplay(completed, total);
+}
+
+function updateWeeklyProgressDisplay(completed, total) {
+    const countEl = document.getElementById('weekly-progress-count');
+    const ringEl = document.getElementById('weekly-progress-ring');
+    
+    if (countEl) countEl.textContent = `${completed} of ${total} goals met this week`;
+    
+    if (ringEl) {
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        ringEl.textContent = `${percent}%`;
+        // Animate border
+        ringEl.style.borderColor = `hsla(var(--primary-h), var(--primary-s), var(--primary-l), ${0.2 + (percent/100)})`;
+    }
 }
 
 // ==========================================
