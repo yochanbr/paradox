@@ -3,27 +3,41 @@
  */
 
 import { auth, provider, db, storage } from "./firebase-config.js";
-import { signInWithPopup, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { 
+    signInWithRedirect, getRedirectResult, signOut, 
+    onAuthStateChanged, updateProfile 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const ADMIN_EMAIL = "yochanbr@gmail.com";
 
 /**
- * Trigger the Google Login Ritual
+ * Handle Auth Redirect Results (Fix for Mobile User Agents)
+ */
+async function handleRedirectResult() {
+    try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+            const user = result.user;
+            await syncUserProfile(user);
+            console.log("Redirect Auth Success:", user.displayName);
+            return user;
+        }
+    } catch (error) {
+        console.error("Redirect Result Error:", error);
+    }
+}
+
+/**
+ * Trigger the Google Login Ritual (Redirect for Mobile Compatibility)
  */
 async function signInWithGoogle() {
     try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        
-        // Sync User Profile to Firestore
-        await syncUserProfile(user);
-        
-        console.log("Authenticated:", user.displayName);
-        return user;
+        // Switching to redirect for mobile/in-app browser compatibility
+        await signInWithRedirect(auth, provider);
     } catch (error) {
-        console.error("Auth Error:", error);
+        console.error("Auth Redirect Error:", error);
         throw error;
     }
 }
@@ -118,4 +132,4 @@ function isUserAdmin(user) {
 }
 
 // Export for application logic
-export { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, updateUserProfile, uploadUserAvatar };
+export { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, updateUserProfile, uploadUserAvatar, handleRedirectResult };

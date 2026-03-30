@@ -3,7 +3,7 @@
  * Integrated with Firebase & Google Identity
  */
 
-import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin } from "./auth.js";
+import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, handleRedirectResult } from "./auth.js";
 import { db } from "./firebase-config.js";
 import { 
     collection, addDoc, query, orderBy, onSnapshot, 
@@ -38,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Login Failed", err);
         }
     });
+
+    // Check for Redirect Result (Mobile Login Fix)
+    handleRedirectResult();
 
     // Monitor Auth State
     onAuthStateChanged(auth, async (user) => {
