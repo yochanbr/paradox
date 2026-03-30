@@ -1,3 +1,4 @@
+import { auth, db, storage } from "./firebase-config.js";
 import { 
     signOut, onAuthStateChanged, updateProfile,
     signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail
