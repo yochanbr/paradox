@@ -3,7 +3,10 @@
  * Integrated with Firebase & Google Identity
  */
 
-import { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, handleRedirectResult } from "./auth.js";
+import { 
+    auth, signOutUser, onAuthStateChanged, isUserAdmin, 
+    signInUser, registerUser, sendRecoveryEmail 
+} from "./auth.js";
 import { db } from "./firebase-config.js";
 import { 
     collection, addDoc, query, orderBy, onSnapshot, 
@@ -22,25 +25,89 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. IDENTITY & LOGIN RITUAL
     // ==========================================
     const loginOverlay = document.getElementById('login-overlay');
-    const loginBtn = document.getElementById('login-google-btn');
-    const profileName = document.querySelector('.hero-name');
-    const profileAvatar = document.querySelector('.hero-avatar');
-    const headerAvatar = document.querySelector('.user-chip img');
-    const adminPortalLink = document.querySelector('a[href="admin.html"]')?.parentElement;
+    const authEmail = document.getElementById('auth-email');
+    const authPass = document.getElementById('auth-password');
+    const authPrimaryBtn = document.getElementById('auth-primary-btn');
+    const authToggleBtn = document.getElementById('auth-toggle-btn');
+    const authForgotBtn = document.getElementById('auth-forgot-btn');
+    const authMainView = document.getElementById('auth-main-view');
+    const authForgotView = document.getElementById('auth-forgot-view');
+    const recoveryEmail = document.getElementById('recovery-email');
+    const sendResetBtn = document.getElementById('send-reset-btn');
+    const backToLoginBtn = document.getElementById('back-to-login-btn');
 
-    // Handle Login Click
-    loginBtn?.addEventListener('click', async () => {
+    let isRegistering = false;
+
+    // View Toggles
+    authToggleBtn?.addEventListener('click', () => {
+        isRegistering = !isRegistering;
+        authPrimaryBtn.textContent = isRegistering ? "Create Identity" : "Enter the Paradox";
+        authToggleBtn.textContent = isRegistering ? "Returning? Sign In" : "First time? Create Identity";
+        authForgotBtn.parentElement.style.display = isRegistering ? 'none' : 'flex';
+    });
+
+    authForgotBtn?.addEventListener('click', () => {
+        authMainView.classList.add('hidden');
+        authForgotView.classList.remove('hidden');
+    });
+
+    backToLoginBtn?.addEventListener('click', () => {
+        authForgotView.classList.add('hidden');
+        authMainView.classList.remove('hidden');
+    });
+
+    // Authentication Submission
+    authPrimaryBtn?.addEventListener('click', async () => {
+        const email = authEmail.value.trim();
+        const pass = authPass.value.trim();
+
+        if (!email || !pass) {
+            showToast("Credentials required.");
+            return;
+        }
+
         try {
-            loginBtn.textContent = "Entering Paradox...";
-            await signInWithGoogle();
+            authPrimaryBtn.disabled = true;
+            authPrimaryBtn.textContent = isRegistering ? "Creating..." : "Authenticating...";
+
+            if (isRegistering) {
+                await registerUser(email, pass);
+                showToast("Identity Created.");
+            } else {
+                await signInUser(email, pass);
+                showToast("Welcome back.");
+            }
         } catch (err) {
-            loginBtn.textContent = "Continue with Google";
-            console.error("Login Failed", err);
+            console.error("Auth Fail:", err);
+            // Handle common Firebase errors gracefully
+            let msg = "Authentication failed.";
+            if (err.code === 'auth/email-already-in-use') msg = "Email already in use.";
+            if (err.code === 'auth/invalid-credential') msg = "Incorrect email or key.";
+            showToast(msg);
+        } finally {
+            authPrimaryBtn.disabled = false;
+            authPrimaryBtn.textContent = isRegistering ? "Create Identity" : "Enter the Paradox";
         }
     });
 
-    // Check for Redirect Result (Mobile Login Fix)
-    handleRedirectResult();
+    // Recovery Submission
+    sendResetBtn?.addEventListener('click', async () => {
+        const email = recoveryEmail.value.trim();
+        if (!email) {
+            showToast("Email required for recovery.");
+            return;
+        }
+        try {
+            sendResetBtn.disabled = true;
+            await sendRecoveryEmail(email);
+            showToast("Recovery link sent.");
+            backToLoginBtn.click();
+        } catch (err) {
+            showToast("Recovery failed.");
+        } finally {
+            sendResetBtn.disabled = false;
+        }
+    });
 
     // Monitor Auth State
     onAuthStateChanged(auth, async (user) => {
@@ -52,31 +119,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             console.log("Welcome,", user.displayName);
             if (!LOCAL_DEV_MODE) loginOverlay?.classList.add('hidden');
+            document.body.style.overflow = 'auto';
             
             // Sync UI with Profile
+            const profileName = document.querySelector('.hero-name');
+            const profileAvatar = document.querySelector('.hero-avatar');
+            const headerAvatar = document.querySelector('.user-chip img');
             if (profileName) profileName.textContent = user.displayName;
             if (profileAvatar) profileAvatar.src = user.photoURL;
             if (headerAvatar) headerAvatar.src = user.photoURL;
 
-            // Update Diary View too
-            const diaryPfp = document.getElementById('diary-pfp');
-            const diaryName = document.getElementById('diary-name');
-            if (diaryPfp) diaryPfp.src = user.photoURL;
-            if (diaryName) diaryName.textContent = user.displayName;
-
-            // Security: Check for Admin Portal
-            if (adminPortalLink) {
-                adminPortalLink.style.display = isUserAdmin(user) ? 'flex' : 'none';
-            }
-
-            // Load User Stats & Feed
+            // Load App Data
             loadUserStats(user.uid);
             loadFeed();
             initRealtimeChallenges();
             initRealtimeNotifications();
-            runNotificationCleanup(user.uid); // Automated 7-day purge
+            runNotificationCleanup(user.uid);
+
+            // Security: Check for Admin Portal
+            const adminPortalLink = document.querySelector('a[href="admin.html"]')?.parentElement;
+            if (adminPortalLink) {
+                adminPortalLink.style.display = isUserAdmin(user) ? 'flex' : 'none';
+            }
         } else {
             if (!LOCAL_DEV_MODE) loginOverlay?.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
         }
     });
 

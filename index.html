@@ -705,17 +705,36 @@
         </div>
     </div>
 
-    <!-- Login Ritual Overlay (Sync with Auth) -->
+    <!-- Login Ritual Overlay (Stoic Identity: Email/Password) -->
     <div id="login-overlay" class="login-overlay hidden">
         <div class="login-modal">
             <h1 class="logo">Paradox<span>.</span></h1>
             <p class="stoic-quote">"It is not that we have a short time to live, but that we waste much of it."</p>
             <span class="quote-author">— Seneca</span>
 
-            <button class="google-login-btn" id="login-google-btn">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" alt="Google">
-                Continue with Google
-            </button>
+            <!-- Auth Main View -->
+            <div id="auth-main-view" class="auth-view">
+                <div class="auth-form-group">
+                    <input type="email" id="auth-email" placeholder="Your Email" class="auth-input">
+                    <input type="password" id="auth-password" placeholder="Key (Password)" class="auth-input">
+                </div>
+                
+                <button id="auth-primary-btn" class="action-btn-large">Enter the Paradox</button>
+                
+                <div class="auth-footer-links">
+                    <button id="auth-toggle-btn" class="text-link">First time? Create Identity</button>
+                    <button id="auth-forgot-btn" class="text-link">Forgot Key?</button>
+                </div>
+            </div>
+
+            <!-- Auth Recovery View -->
+            <div id="auth-forgot-view" class="auth-view hidden">
+                <p class="auth-desc">Enter your email to receive a recovery link.</p>
+                <input type="email" id="recovery-email" placeholder="Your Email" class="auth-input">
+                <button id="send-reset-btn" class="action-btn-large">Send Recovery Link</button>
+                <button id="back-to-login-btn" class="text-link">Back to Identity</button>
+            </div>
+
             <p class="login-footer">By continuing, you accept the Stoic Path.</p>
         </div>
     </div>

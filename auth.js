@@ -1,11 +1,6 @@
-/**
- * PARADOX - IDENTITY & AUTH
- */
-
-import { auth, provider, db, storage } from "./firebase-config.js";
 import { 
-    signInWithRedirect, getRedirectResult, signOut, 
-    onAuthStateChanged, updateProfile 
+    signOut, onAuthStateChanged, updateProfile,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
@@ -13,31 +8,43 @@ import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/fireba
 const ADMIN_EMAIL = "yochanbr@gmail.com";
 
 /**
- * Handle Auth Redirect Results (Fix for Mobile User Agents)
+ * Register a new Identity (Email/Password)
  */
-async function handleRedirectResult() {
+async function registerUser(email, password) {
     try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-            const user = result.user;
-            await syncUserProfile(user);
-            console.log("Redirect Auth Success:", user.displayName);
-            return user;
-        }
+        const result = await createUserWithEmailAndPassword(auth, email, password);
+        const user = result.user;
+        await syncUserProfile(user);
+        return user;
     } catch (error) {
-        console.error("Redirect Result Error:", error);
+        console.error("Registration Error:", error);
+        throw error;
     }
 }
 
 /**
- * Trigger the Google Login Ritual (Redirect for Mobile Compatibility)
+ * Sign In to an existing Identity
  */
-async function signInWithGoogle() {
+async function signInUser(email, password) {
     try {
-        // Switching to redirect for mobile/in-app browser compatibility
-        await signInWithRedirect(auth, provider);
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        const user = result.user;
+        await syncUserProfile(user);
+        return user;
     } catch (error) {
-        console.error("Auth Redirect Error:", error);
+        console.error("Login Error:", error);
+        throw error;
+    }
+}
+
+/**
+ * Recover a forgotten Identity Key
+ */
+async function sendRecoveryEmail(email) {
+    try {
+        await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+        console.error("Recovery Error:", error);
         throw error;
     }
 }
@@ -96,17 +103,21 @@ async function updateUserProfile(newName, newPhotoURL) {
 }
 
 /**
- * Sync Google profile to our Firestore User DB
+ * Sync profile to our Firestore User DB
  */
 async function syncUserProfile(user) {
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
+    // Default name from email if display name is empty
+    const defaultName = user.displayName || user.email.split('@')[0];
+    const defaultPhoto = user.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${defaultName}`;
+
     if (!userSnap.exists()) {
         // New User Initialization
         await setDoc(userRef, {
-            displayName: user.displayName,
-            photoURL: user.photoURL,
+            displayName: defaultName,
+            photoURL: defaultPhoto,
             email: user.email,
             shards: 0,
             level: 1,
@@ -117,8 +128,6 @@ async function syncUserProfile(user) {
     } else {
         // Update returning user
         await setDoc(userRef, {
-            displayName: user.displayName,
-            photoURL: user.photoURL,
             lastLogin: serverTimestamp()
         }, { merge: true });
     }
@@ -132,4 +141,8 @@ function isUserAdmin(user) {
 }
 
 // Export for application logic
-export { auth, signInWithGoogle, signOutUser, onAuthStateChanged, isUserAdmin, updateUserProfile, uploadUserAvatar, handleRedirectResult };
+export { 
+    auth, signOutUser, onAuthStateChanged, isUserAdmin, 
+    updateUserProfile, uploadUserAvatar,
+    signInUser, registerUser, sendRecoveryEmail
+};
