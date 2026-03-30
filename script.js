@@ -455,12 +455,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const indent = Math.min(depth * 24, 48); 
             if (depth > 0) div.style.marginLeft = `${indent}px`;
 
+            const isCurrentUser = auth.currentUser && c.authorId === auth.currentUser.uid;
+            const authorName = isCurrentUser ? auth.currentUser.displayName : c.authorName;
+            const authorPhoto = isCurrentUser ? auth.currentUser.photoURL : (c.authorPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop');
+
             div.innerHTML = `
-                <img src="${c.authorPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'}" class="tiny-avatar">
+                <img src="${authorPhoto}" class="tiny-avatar">
                 <div class="comment-body">
-                    <h4>${c.authorName} <span>${c.timestamp?.toDate().toLocaleDateString() || 'Now'}</span></h4>
+                    <h4>${authorName} <span>${c.timestamp?.toDate().toLocaleDateString() || 'Now'}</span></h4>
                     <p>${c.text}</p>
-                    <button class="reply-trigger-btn" data-id="${c.id}" data-name="${c.authorName}">Reply</button>
+                    <button class="reply-trigger-btn" data-id="${c.id}" data-name="${authorName}">Reply</button>
                 </div>
             `;
             commentsList.appendChild(div);
@@ -774,12 +778,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const isLiked = post.likedBy?.includes(auth.currentUser?.uid);
         const isAuthor = auth.currentUser && post.authorId === auth.currentUser.uid;
 
+        const displayPhoto = isAuthor ? auth.currentUser.photoURL : (post.authorPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop');
+        const displayName = isAuthor ? auth.currentUser.displayName : post.authorName;
+
         div.innerHTML = `
             <div class="post-header">
                 <div class="header-left">
-                    <img src="${post.authorPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'}" class="post-avatar">
+                    <img src="${displayPhoto}" class="post-avatar">
                     <div class="post-meta">
-                        <h4>${post.authorName}</h4>
+                        <h4>${displayName}</h4>
                         <div class="meta-bottom">
                             <span>${post.timestamp?.toDate().toLocaleDateString() || 'Just now'}</span>
                             ${post.edited ? '<span class="edited-tag">• edited</span>' : ''}

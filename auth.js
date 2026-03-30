@@ -3,7 +3,10 @@ import {
     signOut, onAuthStateChanged, updateProfile,
     signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+    doc, getDoc, setDoc, serverTimestamp, updateDoc, 
+    collection, query, where, getDocs, writeBatch 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const ADMIN_EMAIL = "yochanbr@gmail.com";
@@ -93,6 +96,7 @@ async function uploadUserAvatar(uid, file) {
 async function updateUserProfile(newName, newPhotoURL) {
     if (!auth.currentUser) return;
     try {
+        const uid = auth.currentUser.uid;
         const updates = { 
             displayName: newName
         };
@@ -102,8 +106,31 @@ async function updateUserProfile(newName, newPhotoURL) {
         await updateProfile(auth.currentUser, updates);
 
         // 2. Update Firestore User Document (use setDoc + merge for reliability)
-        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userRef = doc(db, "users", uid);
         await setDoc(userRef, updates, { merge: true });
+
+        // 3. BACKGROUND SYNC: Update all existing posts by this user
+        (async () => {
+            try {
+                const batch = writeBatch(db);
+                const postsQuery = query(collection(db, "posts"), where("authorId", "==", uid));
+                const postsSnap = await getDocs(postsQuery);
+                
+                postsSnap.forEach((postDoc) => {
+                    batch.update(postDoc.ref, {
+                        authorName: newName,
+                        authorPhoto: newPhotoURL || auth.currentUser.photoURL
+                    });
+                });
+
+                if (!postsSnap.empty) {
+                    await batch.commit();
+                    console.log(`Synced ${postsSnap.size} posts successfully.`);
+                }
+            } catch (syncErr) {
+                console.warn("Background Identity Sync Failed:", syncErr);
+            }
+        })();
 
         console.log("Profile updated successfully");
         return true;
