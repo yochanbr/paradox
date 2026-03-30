@@ -137,6 +137,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (profileName) profileName.textContent = nameToDisplay;
             if (profileAvatar) profileAvatar.src = photoToDisplay;
             if (headerAvatar) headerAvatar.src = photoToDisplay;
+            
+            // Paradox Identity Bridge (Android WebView)
+            if (window.ParadoxNative && typeof window.ParadoxNative.setUid === 'function') {
+                window.ParadoxNative.setUid(user.uid);
+            }
 
             // Personalize Public Header
             const publicHeader = document.getElementById('public-dox-header');
@@ -449,6 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function notifyUser(recipientId, title, body, postId = null) {
         if (!recipientId || (recipientId !== 'all' && recipientId === auth.currentUser?.uid)) return;
         
+        // Path B: Direct Native Firestore Sync
         await addDoc(collection(db, "user_notifications"), {
             recipientId: recipientId,
             senderId: auth.currentUser?.uid || 'system',
@@ -456,6 +462,16 @@ document.addEventListener('DOMContentLoaded', () => {
             title: title,
             body: body,
             postId: postId,
+            timestamp: serverTimestamp()
+        });
+
+        // Path A: Cloud Notification Trigger (Redundancy)
+        await addDoc(collection(db, "pending_notifications"), {
+            recipientId: recipientId,
+            title: title,
+            body: body,
+            postId: postId,
+            type: "interaction",
             timestamp: serverTimestamp()
         });
     }
