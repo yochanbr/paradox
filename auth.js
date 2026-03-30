@@ -109,24 +109,36 @@ async function updateUserProfile(newName, newPhotoURL) {
         const userRef = doc(db, "users", uid);
         await setDoc(userRef, updates, { merge: true });
 
-        // 3. BACKGROUND SYNC: Update all existing posts by this user
+        // 3. BACKGROUND SYNC: Update all existing content by this user
         (async () => {
             try {
-                const batch = writeBatch(db);
+                // Sync Posts
+                const postBatch = writeBatch(db);
                 const postsQuery = query(collection(db, "posts"), where("authorId", "==", uid));
                 const postsSnap = await getDocs(postsQuery);
-                
-                postsSnap.forEach((postDoc) => {
-                    batch.update(postDoc.ref, {
+                postsSnap.forEach(d => {
+                    postBatch.update(d.ref, {
                         authorName: newName,
                         authorPhoto: newPhotoURL || auth.currentUser.photoURL
                     });
                 });
+                if (!postsSnap.empty) await postBatch.commit();
 
-                if (!postsSnap.empty) {
-                    await batch.commit();
-                    console.log(`Synced ${postsSnap.size} posts successfully.`);
-                }
+                // Sync Notifications (where this user is the sender)
+                const notifyBatch = writeBatch(db);
+                const notifyQuery = query(collection(db, "user_notifications"), where("senderName", "==", auth.currentUser.displayName)); 
+                // Note: This matches OLD name if we haven't changed senderId strategy yet.
+                // For bulletproof sync, it's better to query by a senderId field.
+                const notifySnap = await getDocs(notifyQuery);
+                notifySnap.forEach(d => {
+                    notifyBatch.update(d.ref, {
+                        senderName: newName,
+                        senderPhoto: newPhotoURL || auth.currentUser.photoURL
+                    });
+                });
+                if (!notifySnap.empty) await notifyBatch.commit();
+
+                console.log("Background Identity Sync Complete.");
             } catch (syncErr) {
                 console.warn("Background Identity Sync Failed:", syncErr);
             }

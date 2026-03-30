@@ -135,6 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (profileAvatar) profileAvatar.src = photoToDisplay;
             if (headerAvatar) headerAvatar.src = photoToDisplay;
 
+            // Personalize Public Header
+            const publicHeader = document.getElementById('public-dox-header');
+            if (publicHeader) publicHeader.textContent = `${nameToDisplay}'s Dox`;
+
             // Sync Composer Avatars
             const homeComposerAvatar = document.getElementById('home-composer-avatar');
             const commenterAvatar = document.getElementById('commenter-avatar');
