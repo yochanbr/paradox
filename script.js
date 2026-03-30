@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 0. LOCAL DEVELOPMENT MODE TOGGLE
     // ==========================================
     const LOCAL_DEV_MODE = false; // Set to 'true' for local testing, 'false' for production
-    const CURRENT_APP_VERSION = 1; // Current version of the Android App (Build 1)
 
     // ==========================================
     // 1. IDENTITY & LOGIN RITUAL
@@ -168,9 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
             initRealtimeChallenges();
             initRealtimeNotifications();
             runNotificationCleanup(user.uid);
-
-            // In-App Update Check (Android WebView only)
-            checkForUpdates();
 
             // Security: Check for Admin Portal
             const adminPortalLink = document.querySelector('a[href="admin.html"]')?.parentElement;
@@ -1218,51 +1214,4 @@ async function requestNotificationPermission(uid) {
     }
 }
 
-/**
- * IN-APP UPDATES (Universal Logic)
- */
-async function checkForUpdates() {
-    try {
-        // 1. Fetch latest version from Firestore
-        const configRef = doc(db, "app_config", "version");
-        const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        const configSnap = await getDoc(configRef);
 
-        if (configSnap.exists()) {
-            const config = configSnap.data();
-            const latestVersion = config.latest || 1;
-            const updateUrl = config.url;
-
-            // 2. Compare and Trigger UI (Works on both Web and Android)
-            if (latestVersion > CURRENT_APP_VERSION && updateUrl) {
-                console.log(`Update Found: v${latestVersion}`);
-                const overlay = document.getElementById('update-overlay');
-                const confirmBtn = document.getElementById('confirm-update-btn');
-
-                if (overlay) overlay.classList.add('open');
-
-                if (confirmBtn) {
-                    confirmBtn.onclick = () => {
-                        confirmBtn.disabled = true;
-                        confirmBtn.innerHTML = '<span class="material-symbols-rounded">downloading</span> Downloading...';
-                        
-                        // 3. Smart Bridge Fallback
-                        if (window.Android && typeof window.Android.startUpdate === 'function') {
-                            // Use Native Bridge (Android APK)
-                            window.Android.startUpdate(updateUrl);
-                        } else {
-                            // Fallback for Web Users (Direct Link)
-                            window.open(updateUrl, '_blank');
-                            setTimeout(() => {
-                                confirmBtn.disabled = false;
-                                confirmBtn.innerHTML = '<span class="material-symbols-rounded">download_for_offline</span> Update Now';
-                            }, 2000);
-                        }
-                    };
-                }
-            }
-        }
-    } catch (err) {
-        console.error("Update Check Failed:", err);
-    }
-}
